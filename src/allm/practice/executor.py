@@ -1,11 +1,13 @@
 """Sandboxed procedure execution (PRACTICE.md Stage 3).
 
-Subprocess isolation with a hard timeout, same posture as
-``CodingGrader``: fine while procedures are our own curated catalog;
-OS-level isolation (Roadmap M50) is a prerequisite for anything
-untrusted. Variables are bound as Python literals in a generated
-prelude — values are never interpolated into code text, so a value
-cannot change the program.
+Three guard layers, outermost first (Roadmap M50):
+
+1. **Namespace isolation** (bubblewrap, when available): read-only
+   root, private /tmp, no network, only the declared workdir writable.
+2. **Kernel rlimits**: CPU, memory, file size — the kernel stops what
+   a timeout cannot.
+3. **Wall-clock timeout** + ``python -I`` + literal variable binding —
+   values are never interpolated into code text.
 
 Crashes and timeouts are outcomes, not errors: the run records what
 actually happened.
@@ -13,12 +15,14 @@ actually happened.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import time
 from typing import Any
 
 from allm.core.logging import get_logger
+from allm.practice.isolation import IsolationMode, resolve_isolation, wrap_command
 from allm.practice.types import PracticeProcedure, PracticeRun
 
 logger = get_logger("practice.executor")
@@ -57,7 +61,23 @@ def _check_literal(name: str, value: Any) -> None:
 
 
 class SandboxExecutor:
-    """Runs procedures in an isolated Python subprocess."""
+    """Runs procedures behind namespace isolation, rlimits and a timeout.
+
+    ``isolation``: ``auto`` (default — bubblewrap when functional,
+    logged fallback otherwise), ``bwrap`` (required, raises when
+    impossible) or ``none``. Overridable via ``ALLM_SANDBOX_ISOLATION``.
+    """
+
+    def __init__(self, isolation: IsolationMode | None = None) -> None:
+        requested = isolation or os.environ.get("ALLM_SANDBOX_ISOLATION", "auto")
+        if requested not in ("auto", "bwrap", "none"):
+            raise ValueError(f"unknown isolation mode {requested!r}")
+        self._isolation = resolve_isolation(requested)
+
+    @property
+    def isolation(self) -> str:
+        """The resolved isolation actually in effect (``bwrap``/``none``)."""
+        return self._isolation
 
     def run(
         self, procedure: PracticeProcedure, variables: dict[str, Any] | None = None
@@ -68,10 +88,13 @@ class SandboxExecutor:
         if unknown:
             raise ValueError(f"unknown variable(s) for {procedure.id!r}: {sorted(unknown)}")
         code = bind_variables(bound) + "\n" + procedure.program
+        argv = [sys.executable, "-I", "-c", code]
+        if self._isolation == "bwrap":
+            argv = wrap_command(argv, workdir=procedure.workdir)
         started = time.perf_counter()
         try:
             completed = subprocess.run(
-                [sys.executable, "-I", "-c", code],
+                argv,
                 capture_output=True,
                 text=True,
                 timeout=procedure.timeout_seconds,

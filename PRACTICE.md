@@ -111,15 +111,24 @@ looked least.
 
 ## Stage 3 — Execution (sandboxed)
 
-Subprocess isolation plus **kernel resource limits** (M50):
-`ResourceLimits` applies POSIX rlimits — CPU seconds, address space,
-file size, core dumps off — in the child before `exec`, so the kernel
-stops CPU spins, memory bombs and disk-filling that a wall-clock
-timeout alone cannot. Repo trials get a roomier budget
-(`REPO_TASK_LIMITS`); the `CodingGrader` shares the same guard. Full
-OS isolation (container/jail) remains the M50 exit bar for running
-anything untrusted. Everything observable is captured; crashes and
-timeouts are outcomes, not errors.
+Three guard layers (M50), outermost first:
+
+1. **Namespace isolation** (bubblewrap, auto-detected): every run in
+   its own mount + network + PID namespace — root filesystem
+   read-only, `/tmp` private, **no network at all** (the non-goal
+   below is kernel-enforced, not policy), only the declared workdir
+   writable. `ALLM_SANDBOX_ISOLATION=auto|bwrap|none`; `auto` degrades
+   to layer 2 with a logged warning, `bwrap` refuses to run when
+   impossible.
+2. **Kernel rlimits** (`ResourceLimits`): CPU seconds, address space,
+   file size, core dumps off — applied in the child before `exec`;
+   stops CPU spins, memory bombs and disk-filling that a timeout
+   cannot. Repo trials get a roomier budget (`REPO_TASK_LIMITS`); the
+   `CodingGrader` shares the same guard.
+3. **Wall-clock timeout** + `python -I` + literal variable binding.
+
+Everything observable is captured; crashes and timeouts are outcomes,
+not errors.
 
 ## Stage 4 — Recording
 

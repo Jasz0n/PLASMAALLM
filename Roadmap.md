@@ -221,7 +221,7 @@ the system executes code routinely.*
 
 | Deliverable | Notes |
 |---|---|
-| Sandboxed execution | **kernel rlimits done (2026-07-08):** `ResourceLimits` (CPU / memory / file size / no core dumps) enforced in every `SandboxExecutor` and `CodingGrader` child — memory bombs, CPU spins and disk-filling stopped by the kernel, tested (`tests/test_resource_limits.py`). **Open:** container/jail isolation before untrusted third-party submissions run |
+| Sandboxed execution | **done (2026-07-09).** Three layers: (1) **bubblewrap namespace isolation** — read-only root, private /tmp, no network (kernel-enforced, tested against a live local daemon), only the declared workdir writable; auto-detected with loud degradation (`practice/isolation.py`); (2) **kernel rlimits** — CPU / memory / file size / no core dumps in every `SandboxExecutor` and `CodingGrader` child (`practice/limits.py`); (3) timeout + `-I` + literal binding. Repo trials run fully isolated. Remaining caveat for the security review: same-user uid inside the namespace |
 | API hardening | auth hook points (platform owns identity; core verifies tokens it's handed), rate limits, input caps, pagination |
 | Operational surface | audit log exposed (already versioned), backup/restore, storage migrations, PostgreSQL backend for multi-process deployments |
 | Release engineering | PyPI package, published OpenAPI contract, changelog discipline |

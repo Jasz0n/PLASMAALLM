@@ -19,6 +19,7 @@ from allm.practice.contribution import (
     ContributionBoard,
 )
 from allm.practice.executor import SandboxExecutor, bind_variables
+from allm.practice.isolation import bwrap_available
 from allm.practice.limits import REPO_TASK_LIMITS, ResourceLimits
 from allm.practice.feedback import (
     contribution_question,
@@ -49,6 +50,7 @@ __all__ = [
     "SweepResult",
     "VariableSpec",
     "bind_variables",
+    "bwrap_available",
     "contribution_question",
     "record_review_outcome",
     "repo_test_procedure",
