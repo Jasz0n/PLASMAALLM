@@ -56,6 +56,16 @@ class RecordStore(Protocol):
         """Return all keys ever written in ``namespace``."""
         ...
 
+    def audit(
+        self, namespace: str | None = None, *, limit: int = 100, offset: int = 0
+    ) -> list[Record]:
+        """The audit trail: every write, newest first (M50).
+
+        The store is append-only, so this is not a separate log that
+        could drift — it *is* the data, read in write order.
+        """
+        ...
+
     def close(self) -> None:
         """Release underlying resources."""
         ...

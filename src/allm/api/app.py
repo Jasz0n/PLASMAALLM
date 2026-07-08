@@ -195,6 +195,27 @@ def create_app(
             raise HTTPException(409, str(exc)) from exc
         return resolved.model_dump(mode="json")
 
+    # -- operations ------------------------------------------------------
+
+    @app.get("/audit")
+    def audit_trail(
+        namespace: str | None = None,
+        limit: int = Query(default=100, ge=1, le=500),
+        offset: int = Query(default=0, ge=0),
+    ) -> list[dict]:
+        """Who changed what, when, why — metadata only, values stay
+        behind their own endpoints."""
+        return [
+            {
+                "namespace": r.namespace,
+                "key": r.key,
+                "version": r.version,
+                "reason": r.reason,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in store.audit(namespace, limit=limit, offset=offset)
+        ]
+
     # -- measurement ---------------------------------------------------------------
 
     @app.post("/kel/evaluate")

@@ -89,6 +89,38 @@ class SQLiteRecordStore:
             ).fetchall()
         return [row[0] for row in rows]
 
+    def audit(
+        self, namespace: str | None = None, *, limit: int = 100, offset: int = 0
+    ) -> list[Record]:
+        """Every write, newest first — the append-only table read backwards."""
+        query = (
+            "SELECT namespace, key, version, value, reason, created_at FROM records"
+        )
+        params: list[Any] = []
+        if namespace is not None:
+            query += " WHERE namespace=?"
+            params.append(namespace)
+        query += " ORDER BY created_at DESC, rowid DESC LIMIT ? OFFSET ?"
+        params += [limit, offset]
+        with self._lock:
+            rows = self._conn.execute(query, params).fetchall()
+        return [
+            self._row_to_record(row[0], row[1], row[2:]) for row in rows
+        ]
+
+    def backup_to(self, destination: Path | str) -> Path:
+        """Consistent online backup via SQLite's backup API."""
+        dest = Path(destination)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with self._lock:
+            target = sqlite3.connect(dest)
+            try:
+                self._conn.backup(target)
+                target.commit()
+            finally:
+                target.close()
+        return dest
+
     def close(self) -> None:
         with self._lock:
             self._conn.close()

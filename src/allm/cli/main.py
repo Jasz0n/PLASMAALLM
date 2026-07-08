@@ -14,6 +14,8 @@ Commands:
     allm dataset peek SPEC.yaml     print the first samples of a dataset
     allm kdp distill FILES...       distill documents into knowledge units
     allm benchmark                  state-of-the-system report (M47)
+    allm audit --db FILE            the append-only write trail (M50)
+    allm db backup|restore|verify   database maintenance (M50)
 """
 
 from __future__ import annotations
@@ -136,6 +138,58 @@ def _cmd_benchmark(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_audit(args: argparse.Namespace) -> int:
+    from allm.storage import SQLiteRecordStore
+
+    store = SQLiteRecordStore(args.db)
+    try:
+        records = store.audit(args.namespace, limit=args.limit, offset=args.offset)
+        for record in records:
+            print(
+                f"{record.created_at.isoformat()}  {record.namespace}/{record.key}"
+                f"  v{record.version}  {record.reason or '<no reason>'}"
+            )
+        if not records:
+            print("no records")
+    finally:
+        store.close()
+    return 0
+
+
+def _cmd_db_backup(args: argparse.Namespace) -> int:
+    from allm.storage import SQLiteRecordStore
+    from allm.storage.maintenance import verify_database
+
+    store = SQLiteRecordStore(args.db)
+    try:
+        destination = store.backup_to(args.destination)
+    finally:
+        store.close()
+    ok, detail = verify_database(destination)
+    print(f"backup {destination}: {detail}")
+    return 0 if ok else 1
+
+
+def _cmd_db_restore(args: argparse.Namespace) -> int:
+    from allm.storage.maintenance import restore_database
+
+    try:
+        target = restore_database(args.backup, args.db, force=args.force)
+    except (ValueError, FileExistsError) as exc:
+        print(f"restore refused: {exc}")
+        return 1
+    print(f"restored {target}")
+    return 0
+
+
+def _cmd_db_verify(args: argparse.Namespace) -> int:
+    from allm.storage.maintenance import verify_database
+
+    ok, detail = verify_database(args.db)
+    print(f"{args.db}: {detail}")
+    return 0 if ok else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="allm", description="ALLM research platform CLI")
     parser.add_argument("--log-level", default="INFO", help="logging level (default INFO)")
@@ -197,6 +251,31 @@ def build_parser() -> argparse.ArgumentParser:
     p_bench.add_argument("--output", default=None, help="write the report JSON to this path")
     p_bench.add_argument("--root", default=None, help="project root (default: installed package root)")
     p_bench.set_defaults(func=_cmd_benchmark)
+
+    p_audit = sub.add_parser("audit", help="append-only write trail (M50)")
+    p_audit.add_argument("--db", required=True, help="sqlite database path")
+    p_audit.add_argument("-n", "--namespace", default=None, help="filter by namespace")
+    p_audit.add_argument("--limit", type=int, default=50, help="rows to show (default 50)")
+    p_audit.add_argument("--offset", type=int, default=0, help="rows to skip")
+    p_audit.set_defaults(func=_cmd_audit)
+
+    p_db = sub.add_parser("db", help="database maintenance (M50)")
+    db_sub = p_db.add_subparsers(dest="subcommand", required=True)
+    p_backup = db_sub.add_parser("backup", help="consistent online backup")
+    p_backup.add_argument("--db", required=True, help="sqlite database path")
+    p_backup.add_argument("destination", help="backup file to write")
+    p_backup.set_defaults(func=_cmd_db_backup)
+    p_restore = db_sub.add_parser("restore", help="restore a verified backup")
+    p_restore.add_argument("--db", required=True, help="target database path")
+    p_restore.add_argument("backup", help="backup file to restore from")
+    p_restore.add_argument(
+        "--force", action="store_true",
+        help="replace an existing target (old file kept as .replaced)",
+    )
+    p_restore.set_defaults(func=_cmd_db_restore)
+    p_verify = db_sub.add_parser("verify", help="integrity-check a database")
+    p_verify.add_argument("--db", required=True, help="sqlite database path")
+    p_verify.set_defaults(func=_cmd_db_verify)
 
     return parser
 
