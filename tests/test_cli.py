@@ -59,3 +59,21 @@ def test_runs_empty(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     config.write_text(f"project_root: {tmp_path}\n", encoding="utf-8")
     assert main(["runs", "-c", str(config)]) == 0
     assert "no runs" in capsys.readouterr().out
+
+
+def test_benchmark_output_creates_parent_dirs(tmp_path: Path) -> None:
+    """Regression for issue #1: a finished report must never be lost to
+    a missing output directory."""
+    output = tmp_path / "reports" / "nested" / "report.json"
+    code = main(
+        [
+            "--log-level", "WARNING",
+            "benchmark",
+            "--corpora", "fiction",
+            "--iterations", "1",
+            "--root", str(Path(__file__).resolve().parents[1]),
+            "--output", str(output),
+        ]
+    )
+    assert code == 0
+    assert output.exists() and '"corpus": "fiction"' in output.read_text()
