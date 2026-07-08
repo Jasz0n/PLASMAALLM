@@ -113,9 +113,9 @@ that its claims survive a stranger's scrutiny.*
 | Docs alignment | **done (2026-07-08).** README "State of the system" section quotes the benchmark; audit linked |
 
 **Exit criteria**
-- `pytest` fully green — **met** (535 offline tests). CI badge on the
-  README — **pending the repo's first push to GitHub** (workflow is in
-  place; this directory is not yet a git checkout).
+- `pytest` fully green — **met** (574 offline tests). CI badge on the
+  README — **met (2026-07-08):** repo live at
+  github.com/Jasz0n/PLASMAALLM, CI running on every push.
 - `allm benchmark` emits the state-of-the-system report from a clean
   checkout — **met** (fiction seconds; full three-corpora run distills
   all books, minutes).

@@ -1,5 +1,7 @@
 # ALLM — Autonomous Learning Language Model
 
+[![CI](https://github.com/Jasz0n/PLASMAALLM/actions/workflows/ci.yml/badge.svg)](https://github.com/Jasz0n/PLASMAALLM/actions/workflows/ci.yml)
+
 An experimental research platform exploring autonomous learning in
 language models: a system that evaluates its own knowledge, plans its
 own curriculum, studies, examines itself and compresses what it learns.
