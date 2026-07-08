@@ -22,3 +22,5 @@ experiments/runs/
 books/*
 !books/README.md
 !books/sidecar_templates/
+dist/
+build/

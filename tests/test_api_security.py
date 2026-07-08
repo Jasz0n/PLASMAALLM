@@ -120,3 +120,18 @@ def test_env_default_uses_static_token(tmp_path: Path, monkeypatch) -> None:
             "/kel/evaluate", headers={"Authorization": f"Bearer {TOKEN}"}
         )
         assert ok.status_code == 200
+
+
+def test_published_openapi_contract_is_current(tmp_path: Path) -> None:
+    """docs/openapi.json is the frozen wire contract (M50) — regenerating
+    must produce the same paths and version, or the publication is stale."""
+    import json
+
+    from allm.api.app import create_app
+
+    published = json.loads(
+        (Path(__file__).resolve().parents[1] / "docs" / "openapi.json").read_text()
+    )
+    live = create_app(tmp_path / "contract.sqlite3").openapi()
+    assert published["info"]["version"] == live["info"]["version"]
+    assert sorted(published["paths"]) == sorted(live["paths"])

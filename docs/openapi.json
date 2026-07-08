@@ -1,0 +1,1437 @@
+{
+  "components": {
+    "schemas": {
+      "Artifact": {
+        "description": "Reference to a supporting file (design, photo, dataset, code).\n\nThe core never stores blobs; ``uri`` points into the platform's\nstorage and ``sha256`` pins the exact bytes for reproducibility.",
+        "properties": {
+          "media_type": {
+            "default": "application/octet-stream",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "uri"
+        ],
+        "title": "Artifact",
+        "type": "object"
+      },
+      "ClaimRequest": {
+        "properties": {
+          "contributor": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Contributor",
+            "type": "string"
+          }
+        },
+        "required": [
+          "contributor"
+        ],
+        "title": "ClaimRequest",
+        "type": "object"
+      },
+      "ConceptSummary": {
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "evidence_count": {
+            "title": "Evidence Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "confidence",
+          "status",
+          "evidence_count"
+        ],
+        "title": "ConceptSummary",
+        "type": "object"
+      },
+      "DocumentSubmission": {
+        "description": "POST /documents body \u2014 one raw human explanation stream.",
+        "properties": {
+          "context": {
+            "default": "general",
+            "maxLength": 100,
+            "title": "Context",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 500000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "text"
+        ],
+        "title": "DocumentSubmission",
+        "type": "object"
+      },
+      "EvidenceSubmission": {
+        "description": "POST /evidence body \u2014 a package without an id (the core mints it).\n\nSize caps (M50): generous for honest contributions, hostile to\npayload abuse. Artifacts are references, never blobs \u2014 the platform\nstores files.",
+        "properties": {
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/Artifact"
+            },
+            "maxItems": 32,
+            "title": "Artifacts",
+            "type": "array"
+          },
+          "claim": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Claim",
+            "type": "string"
+          },
+          "concept": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Concept",
+            "type": "string"
+          },
+          "contributor": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Contributor",
+            "type": "string"
+          },
+          "environment": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Environment",
+            "type": "object"
+          },
+          "kind": {
+            "default": "experiment",
+            "enum": [
+              "experiment",
+              "replication",
+              "paper",
+              "transcript",
+              "debate",
+              "observation"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "measurements": {
+            "additionalProperties": true,
+            "title": "Measurements",
+            "type": "object"
+          },
+          "outcome": {
+            "enum": [
+              "supported",
+              "challenged",
+              "inconclusive"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "related_concepts": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 32,
+            "title": "Related Concepts",
+            "type": "array"
+          },
+          "replicates": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replicates"
+          },
+          "reproduction_steps": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Reproduction Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "claim",
+          "concept",
+          "contributor",
+          "outcome"
+        ],
+        "title": "EvidenceSubmission",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ResolveRequest": {
+        "properties": {
+          "packages": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSubmission"
+            },
+            "maxItems": 16,
+            "title": "Packages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "packages"
+        ],
+        "title": "ResolveRequest",
+        "type": "object"
+      },
+      "TeacherKelSessionResponse": {
+        "description": "Active Teacher pause session between Researcher and KEL loop.",
+        "properties": {
+          "exported_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exported At"
+          },
+          "opened_at": {
+            "title": "Opened At",
+            "type": "string"
+          },
+          "pending_briefs": {
+            "title": "Pending Briefs",
+            "type": "integer"
+          },
+          "resume_flag": {
+            "title": "Resume Flag",
+            "type": "string"
+          },
+          "resumed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resumed At"
+          },
+          "run_dir": {
+            "title": "Run Dir",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "student_exports": {
+            "title": "Student Exports",
+            "type": "integer"
+          },
+          "total_briefs": {
+            "title": "Total Briefs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "run_dir",
+          "status",
+          "pending_briefs",
+          "total_briefs",
+          "student_exports",
+          "opened_at",
+          "resume_flag"
+        ],
+        "title": "TeacherKelSessionResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VisualApprovalRequest": {
+        "description": "POST body for approving or rejecting one brief.",
+        "properties": {
+          "approved": {
+            "default": true,
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "approved_by": {
+            "default": "teacher-ui",
+            "title": "Approved By",
+            "type": "string"
+          },
+          "include_diagram": {
+            "default": true,
+            "title": "Include Diagram",
+            "type": "boolean"
+          },
+          "include_experiment": {
+            "default": true,
+            "title": "Include Experiment",
+            "type": "boolean"
+          },
+          "max_images": {
+            "default": 2,
+            "maximum": 6.0,
+            "minimum": 0.0,
+            "title": "Max Images",
+            "type": "integer"
+          },
+          "max_questions": {
+            "default": 3,
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Max Questions",
+            "type": "integer"
+          },
+          "review_note": {
+            "default": "",
+            "title": "Review Note",
+            "type": "string"
+          }
+        },
+        "title": "VisualApprovalRequest",
+        "type": "object"
+      },
+      "VisualBriefDetail": {
+        "description": "Teacher detail view \u2014 includes internal notes, not for students.",
+        "properties": {
+          "approval_status": {
+            "title": "Approval Status",
+            "type": "string"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "brief_id": {
+            "title": "Brief Id",
+            "type": "string"
+          },
+          "concept_description": {
+            "default": "",
+            "title": "Concept Description",
+            "type": "string"
+          },
+          "concept_name": {
+            "title": "Concept Name",
+            "type": "string"
+          },
+          "curriculum_topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Curriculum Topic"
+          },
+          "diagram_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diagram Summary"
+          },
+          "evidence_confidence": {
+            "title": "Evidence Confidence",
+            "type": "number"
+          },
+          "experiment_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment Prompt"
+          },
+          "explanations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Explanations",
+            "type": "array"
+          },
+          "has_diagram": {
+            "title": "Has Diagram",
+            "type": "boolean"
+          },
+          "image_count": {
+            "title": "Image Count",
+            "type": "integer"
+          },
+          "images": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Images",
+            "type": "array"
+          },
+          "package_id": {
+            "title": "Package Id",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "source_kind": {
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "teacher_notes": {
+            "default": "",
+            "title": "Teacher Notes",
+            "type": "string"
+          }
+        },
+        "required": [
+          "brief_id",
+          "concept_name",
+          "source_kind",
+          "provider",
+          "package_id",
+          "evidence_confidence",
+          "image_count",
+          "has_diagram",
+          "approval_status"
+        ],
+        "title": "VisualBriefDetail",
+        "type": "object"
+      },
+      "VisualBriefSummary": {
+        "description": "Teacher list view for one distilled visual brief.",
+        "properties": {
+          "approval_status": {
+            "title": "Approval Status",
+            "type": "string"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "brief_id": {
+            "title": "Brief Id",
+            "type": "string"
+          },
+          "concept_name": {
+            "title": "Concept Name",
+            "type": "string"
+          },
+          "evidence_confidence": {
+            "title": "Evidence Confidence",
+            "type": "number"
+          },
+          "has_diagram": {
+            "title": "Has Diagram",
+            "type": "boolean"
+          },
+          "image_count": {
+            "title": "Image Count",
+            "type": "integer"
+          },
+          "package_id": {
+            "title": "Package Id",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "source_kind": {
+            "title": "Source Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "brief_id",
+          "concept_name",
+          "source_kind",
+          "provider",
+          "package_id",
+          "evidence_confidence",
+          "image_count",
+          "has_diagram",
+          "approval_status"
+        ],
+        "title": "VisualBriefSummary",
+        "type": "object"
+      },
+      "VisualExportResponse": {
+        "description": "Result of exporting approved briefs.",
+        "properties": {
+          "export_count": {
+            "title": "Export Count",
+            "type": "integer"
+          },
+          "exports": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Exports",
+            "type": "array"
+          },
+          "student_exports_total": {
+            "title": "Student Exports Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "exports",
+          "export_count",
+          "student_exports_total"
+        ],
+        "title": "VisualExportResponse",
+        "type": "object"
+      },
+      "VisualReviewSummary": {
+        "description": "Dashboard counts for Teacher visual review.",
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "integer"
+          },
+          "book_briefs": {
+            "title": "Book Briefs",
+            "type": "integer"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          },
+          "rejected": {
+            "title": "Rejected",
+            "type": "integer"
+          },
+          "student_exports": {
+            "title": "Student Exports",
+            "type": "integer"
+          },
+          "total_briefs": {
+            "title": "Total Briefs",
+            "type": "integer"
+          },
+          "workshop_briefs": {
+            "title": "Workshop Briefs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_briefs",
+          "pending",
+          "approved",
+          "rejected",
+          "student_exports",
+          "workshop_briefs",
+          "book_briefs"
+        ],
+        "title": "VisualReviewSummary",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "ALLM",
+    "version": "0.9.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/audit": {
+      "get": {
+        "description": "Who changed what, when, why \u2014 metadata only, values stay\nbehind their own endpoints.",
+        "operationId": "audit_trail_audit_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "namespace",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Namespace"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Audit Trail Audit Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Audit Trail"
+      }
+    },
+    "/concepts": {
+      "get": {
+        "operationId": "list_concepts_concepts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConceptSummary"
+                  },
+                  "title": "Response List Concepts Concepts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Concepts"
+      }
+    },
+    "/concepts/{name}": {
+      "get": {
+        "operationId": "get_concept_concepts__name__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Concept Concepts  Name  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Concept"
+      }
+    },
+    "/documents": {
+      "post": {
+        "operationId": "submit_documents_documents_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/DocumentSubmission"
+                },
+                "title": "Submissions",
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Submit Documents Documents Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Documents"
+      }
+    },
+    "/evidence": {
+      "post": {
+        "operationId": "submit_evidence_evidence_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceSubmission"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Submit Evidence Evidence Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Evidence"
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Health Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/kel/evaluate": {
+      "post": {
+        "operationId": "kel_evaluate_kel_evaluate_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Kel Evaluate Kel Evaluate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Kel Evaluate"
+      }
+    },
+    "/proposals": {
+      "get": {
+        "operationId": "list_proposals_proposals_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response List Proposals Proposals Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Proposals"
+      }
+    },
+    "/proposals/{proposal_id}/claim": {
+      "post": {
+        "operationId": "claim_proposal_proposals__proposal_id__claim_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Claim Proposal Proposals  Proposal Id  Claim Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Claim Proposal"
+      }
+    },
+    "/proposals/{proposal_id}/resolve": {
+      "post": {
+        "operationId": "resolve_proposal_proposals__proposal_id__resolve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Resolve Proposal Proposals  Proposal Id  Resolve Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Proposal"
+      }
+    },
+    "/teacher/": {
+      "get": {
+        "operationId": "teacher_ui_teacher__get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Teacher Ui",
+        "tags": [
+          "teacher"
+        ]
+      }
+    },
+    "/teacher/session": {
+      "get": {
+        "operationId": "get_teacher_session_teacher_session_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeacherKelSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Teacher Session",
+        "tags": [
+          "teacher"
+        ]
+      }
+    },
+    "/teacher/session/resume": {
+      "post": {
+        "operationId": "resume_teacher_session_teacher_session_resume_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeacherKelSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Resume Teacher Session",
+        "tags": [
+          "teacher"
+        ]
+      }
+    },
+    "/teacher/visual-briefs": {
+      "get": {
+        "operationId": "list_visual_briefs_teacher_visual_briefs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "source_kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "pending",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected",
+                "all"
+              ],
+              "title": "Status",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VisualBriefSummary"
+                  },
+                  "title": "Response List Visual Briefs Teacher Visual Briefs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Visual Briefs",
+        "tags": [
+          "teacher"
+        ]
+      }
+    },
+    "/teacher/visual-briefs/{brief_id}": {
+      "get": {
+        "operationId": "get_visual_brief_teacher_visual_briefs__brief_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "brief_id",
+            "required": true,
+            "schema": {
+              "title": "Brief Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisualBriefDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Visual Brief",
+        "tags": [
+          "teacher"
+        ]
+      }
+    },
+    "/teacher/visual-briefs/{brief_id}/approve": {
+      "post": {
+        "operationId": "approve_visual_brief_route_teacher_visual_briefs__brief_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "brief_id",
+            "required": true,
+            "schema": {
+              "title": "Brief Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VisualApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Visual Brief Route",
+        "tags": [
+          "teacher"
+        ]
+      }
+    },
+    "/teacher/visual-exports": {
+      "post": {
+        "operationId": "export_visual_briefs_teacher_visual_exports_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisualExportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Export Visual Briefs",
+        "tags": [
+          "teacher"
+        ]
+      }
+    },
+    "/teacher/visual-review/summary": {
+      "get": {
+        "operationId": "review_summary_teacher_visual_review_summary_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisualReviewSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Review Summary",
+        "tags": [
+          "teacher"
+        ]
+      }
+    }
+  }
+}

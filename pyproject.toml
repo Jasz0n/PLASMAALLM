@@ -4,16 +4,31 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "allm"
-version = "0.1.0"
+version = "0.9.0"
 description = "Autonomous Learning Language Model - an experimental research platform for autonomous learning in language models."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "PlasmaALLM" }]
+keywords = ["autonomous-learning", "knowledge-graph", "evidence", "llm", "agents"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
 dependencies = [
     "pydantic>=2.7",
     "PyYAML>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Jasz0n/PLASMAALLM"
+Repository = "https://github.com/Jasz0n/PLASMAALLM"
+Issues = "https://github.com/Jasz0n/PLASMAALLM/issues"
 
 [project.optional-dependencies]
 # Heavy ML stack. Everything in src/allm imports these lazily, so the
