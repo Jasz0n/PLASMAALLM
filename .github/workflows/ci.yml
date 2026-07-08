@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+    - cron: "17 3 * * *" # nightly examples smoke-run
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install (core + dev + api)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,api]"
+      - name: Run tests
+        run: pytest
+
+  # Offline examples only — echo backend, no Ollama/torch/LiveKit.
+  # Runs nightly (and on demand), never blocks a push.
+  examples:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install (core + dev + api)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,api]"
+      - name: Smoke-run offline examples
+        run: |
+          set -e
+          for example in \
+            01_infrastructure_tour \
+            02_teacher_evaluates_students \
+            03_students_learn_from_failure \
+            04_learning_roadmap \
+            05_knowledge_graph \
+            06_continuous_learning_loop \
+            07_kdp_distillation \
+            08_kel_evaluation \
+            09_evidence_and_proposals \
+            21_specialist_routing \
+            24_peer_consultation \
+            25_researcher_cycle \
+            26_mediated_consultation \
+            27_researcher_kel_loop \
+            28_researcher_kel_metrics \
+            30_kids_topic_alignment \
+            31_research_plan_cycle \
+            32_ecosystem_targeting \
+            33_researcher_brain_cycle \
+            34_multimodal_sync \
+            35_debate_show_me \
+            37_auto_video_fixtures \
+            39_consult_show_me \
+            46_full_multimodal_stack \
+            75_practice_engine \
+            76_practice_heldout_ablation \
+            77_repository_researcher \
+            78_apprentice_contribution \
+            79_repo_history_evidence \
+          ; do
+            echo "=== examples/$example.py"
+            python "examples/$example.py" > /dev/null
+          done

@@ -1,0 +1,8 @@
+# Deterministic mock model — runs anywhere, no downloads.
+# Use it to develop and test orchestration (teacher/students/exams).
+name: echo-test
+provider: echo
+model_id: none
+generation:
+  max_new_tokens: 128
+  temperature: 0.0

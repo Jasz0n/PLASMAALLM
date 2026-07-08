@@ -1,0 +1,8 @@
+name: ollama-digest-writer
+provider: ollama
+model_id: qwen2.5:14b-instruct
+device: local
+generation:
+  max_new_tokens: 1200
+  temperature: 0.1
+  top_p: 1.0

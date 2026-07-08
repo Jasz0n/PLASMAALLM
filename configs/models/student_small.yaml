@@ -1,0 +1,11 @@
+# A small open model suitable for local student experiments.
+# Requires the ML extras: pip install -e ".[ml]"
+name: student-small
+provider: huggingface
+model_id: Qwen/Qwen2.5-0.5B-Instruct
+device: auto
+dtype: auto
+generation:
+  max_new_tokens: 256
+  temperature: 0.7
+  top_p: 0.95

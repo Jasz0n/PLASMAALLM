@@ -1,0 +1,25 @@
+# Topic catalog: what exists, what matters, what depends on what.
+# Consumed by allm.planner.load_catalog; Phase 5's knowledge graph will
+# eventually generate this instead of it being hand-written.
+arithmetic:
+  importance: 0.9
+  curiosity: 0.3
+
+algebra:
+  importance: 0.8
+  curiosity: 0.5
+  dependencies: [arithmetic]
+
+geography:
+  importance: 0.6
+  curiosity: 0.6
+
+general-relativity:
+  importance: 0.7
+  curiosity: 0.9
+  dependencies: [algebra]
+
+quantum-gravity:
+  importance: 0.5
+  curiosity: 1.0
+  dependencies: [general-relativity]

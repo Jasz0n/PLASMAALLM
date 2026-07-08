@@ -1,0 +1,9 @@
+# Ollama model for writing generative exams (stronger than the student).
+name: ollama-exam-writer
+provider: ollama
+model_id: qwen2.5:7b-instruct
+device: local
+generation:
+  max_new_tokens: 512
+  temperature: 0.2
+  top_p: 0.9

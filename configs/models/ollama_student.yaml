@@ -1,0 +1,10 @@
+# Local Ollama student — small instruct model for in-context learning loops.
+# Requires: ollama serve && ollama pull qwen2.5:0.5b-instruct
+name: ollama-student
+provider: ollama
+model_id: qwen2.5:0.5b-instruct
+device: local
+generation:
+  max_new_tokens: 128
+  temperature: 0.3
+  top_p: 0.9

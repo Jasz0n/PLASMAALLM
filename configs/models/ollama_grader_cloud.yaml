@@ -1,0 +1,9 @@
+# Cloud grader via Ollama API — set OLLAMA_API_KEY in the environment.
+name: ollama-grader-cloud
+provider: ollama
+model_id: minimax-m3:cloud
+device: cloud
+generation:
+  max_new_tokens: 64
+  temperature: 0.0
+  top_p: 1.0

@@ -1,0 +1,35 @@
+{
+  "source_id": "knowledgeSeekerWorkshop3",
+  "title": "Magnetic plasma field interaction",
+  "duration_sec": 3600,
+  "transcript_ref": "knowledgeSeekerWorkshop3.txt",
+  "curriculum_topic": "kids-plasma",
+  "cues": [
+    {
+      "timestamp_sec": 120.0,
+      "transcript_phrase": "how the magnetic Plasma and fields interact",
+      "visual": {
+        "description": "Colored ball representing plasma with visible magnetic field lines between objects",
+        "frame_start": 450,
+        "frame_end": 520,
+        "tags": ["plasma-motion", "magnetic-fields", "colored-ball", "blue-plasma"]
+      },
+      "audio": {
+        "description": "Soft classroom discussion while fields are explained",
+        "tags": ["ambient", "discussion"]
+      },
+      "concept_hints": ["magnetic fields", "plasma interaction", "magnetical fields"]
+    },
+    {
+      "timestamp_sec": 480.0,
+      "transcript_phrase": "If we look at this set of magnets",
+      "visual": {
+        "description": "Series of magnets showing elongated plasma rays and field attraction",
+        "frame_start": 1200,
+        "frame_end": 1280,
+        "tags": ["magnet-rotation", "field-beat", "magnet-chase", "plasma-motion"]
+      },
+      "concept_hints": ["magnetical fields", "plasma motion", "rotation"]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "source_id": "knowledgeSeekerWorkshop9",
+  "title": "Plasma magnet demonstration",
+  "duration_sec": 4200,
+  "transcript_ref": "knowledgeSeekerWorkshop9.txt",
+  "curriculum_topic": "kids-plasma",
+  "cues": [
+    {
+      "timestamp_sec": 712.0,
+      "transcript_phrase": "we've just seen in this video",
+      "visual": {
+        "description": "Rotating magnets on a pin — no fuel, motion from field interaction",
+        "frame_start": 1980,
+        "frame_end": 2055,
+        "tags": ["magnet-rotation", "plasma-motion", "no-fuel"]
+      },
+      "audio": {
+        "description": "Soft mechanical click as magnets twist",
+        "tags": ["machine-sound", "magnet-click"]
+      },
+      "concept_hints": ["plasma motion", "magnetical fields"]
+    },
+    {
+      "timestamp_sec": 845.0,
+      "transcript_phrase": "as you've seen in the video the one magnet",
+      "visual": {
+        "description": "One magnet chasing the other — blue field region visible between poles",
+        "frame_start": 2145,
+        "frame_end": 2189,
+        "tags": ["blue-plasma", "magnet-chase", "field-beat"]
+      },
+      "audio": {
+        "description": "Rhythmic beating as fields try to catch up",
+        "tags": ["field-beat", "rotation"]
+      },
+      "concept_hints": ["magnetical beat", "plasma heartbeat", "rotation"]
+    },
+    {
+      "timestamp_sec": 848.0,
+      "transcript_phrase": "What you show in that video is actually",
+      "visual": {
+        "description": "Close-up of repulsion between similar poles",
+        "frame_start": 2190,
+        "frame_end": 2220,
+        "tags": ["repulsion", "similar-poles"]
+      },
+      "concept_hints": ["magnetical", "repulsion fields"]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.coverage
+experiments/runs/
+*.sqlite3
+.DS_Store
+
+# Local environment and editor state — never committed
+.env
+.claude/settings.local.json*
+
+# Runtime caches
+.frames_cache/
+.livekit_cache/
+
+# Keshe books: copyrighted material stays local. Only the sidecar
+# templates ship; drop your own PDFs/extracted text into books/
+# (see books/README.md).
+books/*
+!books/README.md
+!books/sidecar_templates/

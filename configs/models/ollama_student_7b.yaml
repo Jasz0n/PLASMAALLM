@@ -1,0 +1,10 @@
+# Local Ollama student — 7B instruct for kids plasma loops.
+# Requires: ollama serve && ollama pull qwen2.5:7b-instruct
+name: ollama-student-7b
+provider: ollama
+model_id: qwen2.5:7b-instruct
+device: local
+generation:
+  max_new_tokens: 256
+  temperature: 0.2
+  top_p: 0.9

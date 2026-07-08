@@ -1,0 +1,14 @@
+# Kids Knowledge Seekers curriculum (from cleaned MK transcripts).
+kids-plasma:
+  importance: 1.0
+  curiosity: 0.9
+
+plasma-science:
+  importance: 0.95
+  curiosity: 0.85
+  dependencies: [kids-plasma]
+
+magnetic-fields:
+  importance: 0.9
+  curiosity: 0.8
+  dependencies: [plasma-science]

@@ -1,0 +1,42 @@
+{
+  "streams": [
+    {
+      "stream_id": "workshop-plasma-live-demo",
+      "title": "Plasma magnet workshop — live",
+      "status": "live",
+      "livekit_room_name": "workshop-plasma-live-demo",
+      "livekit_url": "wss://livekit.example",
+      "curriculum_topic": "kids-plasma",
+      "topic": "kids-plasma",
+      "tags": ["kids-plasma", "workshop", "livekit"],
+      "snapshots": [
+        {
+          "timestamp_sec": 12.0,
+          "transcript_excerpt": "watch the magnets rotate without fuel",
+          "visual": {
+            "description": "Live view — rotating magnets on a pin, blue plasma region between poles",
+            "tags": ["livekit", "magnet-rotation", "blue-plasma"]
+          },
+          "audio": {
+            "description": "Live machine click as magnets twist",
+            "tags": ["machine-sound", "live-audio"]
+          },
+          "concept_hints": ["plasma motion", "magnetical fields"]
+        },
+        {
+          "timestamp_sec": 28.5,
+          "transcript_excerpt": "the field tries to catch up with the magnet",
+          "visual": {
+            "description": "Live view — one magnet chasing another across the demonstration table",
+            "tags": ["livekit", "magnet-chase", "field-beat"]
+          },
+          "audio": {
+            "description": "Rhythmic beating from the live demonstration",
+            "tags": ["field-beat", "rotation"]
+          },
+          "concept_hints": ["magnetical beat", "rotation"]
+        }
+      ]
+    }
+  ]
+}

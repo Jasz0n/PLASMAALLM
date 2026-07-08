@@ -1,0 +1,16 @@
+# Project-level configuration. Defaults are sensible; every value here
+# can also be overridden via environment variables, e.g.
+#   ALLM_LOGGING__LEVEL=DEBUG allm runs
+project_root: "."
+
+logging:
+  level: INFO
+  json_format: false
+
+storage:
+  backend: sqlite
+  path: experiments/allm.sqlite3
+
+tracking:
+  backend: local
+  root: experiments/runs

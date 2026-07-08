@@ -1,0 +1,10 @@
+# Stronger local grader — used as LLM judge for chatty or reasoning answers.
+# Requires: ollama pull qwen2.5:14b-instruct
+name: ollama-grader-local
+provider: ollama
+model_id: qwen2.5:14b-instruct
+device: local
+generation:
+  max_new_tokens: 64
+  temperature: 0.0
+  top_p: 1.0

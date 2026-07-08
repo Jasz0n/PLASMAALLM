@@ -1,0 +1,23 @@
+id: software-student
+display_name: Software Student
+mission: Become an expert in AI-friendly software development.
+core_from: shared_core.yaml
+primary_domains:
+  - python
+  - typescript
+  - rust
+  - react
+  - cuda
+  - ai
+  - fastify
+  - prisma
+secondary_domains:
+  - devops
+  - testing
+  - documentation
+ignored_domains:
+  - plasma
+  - biology
+  - medieval
+  - literature
+exploration_rate: 0.05

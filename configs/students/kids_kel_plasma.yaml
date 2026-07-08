@@ -1,0 +1,22 @@
+id: kids-kel
+display_name: Kids Plasma Specialist
+mission: Become the world's best expert in Kids plasma science.
+core_from: shared_core.yaml
+primary_domains:
+  - plasma
+  - kids-plasma
+  - plasma-science
+  - magnetic
+  - matter
+  - energy
+  - field
+  - atom
+  - electron
+secondary_domains:
+  - materials
+  - electromagnetism
+ignored_domains:
+  - history
+  - literature
+  - economics
+exploration_rate: 0.05
