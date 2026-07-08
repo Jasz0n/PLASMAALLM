@@ -130,6 +130,7 @@ def _cmd_benchmark(args: argparse.Namespace) -> int:
     )
     print(report.to_markdown())
     if args.output:
+        Path(args.output).parent.mkdir(parents=True, exist_ok=True)
         Path(args.output).write_text(report.model_dump_json(indent=2) + "\n")
         print(f"\nreport written to {args.output}")
     return 0
