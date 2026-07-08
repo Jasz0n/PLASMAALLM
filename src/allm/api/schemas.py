@@ -9,41 +9,61 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from allm.evidence.types import Artifact, Outcome, PackageKind
 
 
 class EvidenceSubmission(BaseModel):
-    """POST /evidence body — a package without an id (the core mints it)."""
+    """POST /evidence body — a package without an id (the core mints it).
 
-    claim: str
-    concept: str
-    contributor: str
+    Size caps (M50): generous for honest contributions, hostile to
+    payload abuse. Artifacts are references, never blobs — the platform
+    stores files.
+    """
+
+    claim: str = Field(min_length=1, max_length=2_000)
+    concept: str = Field(min_length=1, max_length=200)
+    contributor: str = Field(min_length=1, max_length=200)
     kind: PackageKind = "experiment"
     outcome: Outcome
-    artifacts: list[Artifact] = Field(default_factory=list)
+    artifacts: list[Artifact] = Field(default_factory=list, max_length=32)
     measurements: dict[str, Any] = Field(default_factory=dict)
     environment: dict[str, str] = Field(default_factory=dict)
-    reproduction_steps: list[str] = Field(default_factory=list)
-    replicates: str | None = None
-    related_concepts: list[str] = Field(default_factory=list)
+    reproduction_steps: list[str] = Field(default_factory=list, max_length=64)
+    replicates: str | None = Field(default=None, max_length=200)
+    related_concepts: list[str] = Field(default_factory=list, max_length=32)
+
+    @field_validator("measurements", "environment")
+    @classmethod
+    def _cap_mapping(cls, value: dict) -> dict:
+        if len(value) > 128:
+            raise ValueError("at most 128 entries")
+        return value
+
+    @field_validator("reproduction_steps", "related_concepts")
+    @classmethod
+    def _cap_items(cls, value: list[str]) -> list[str]:
+        for item in value:
+            if len(item) > 2_000:
+                raise ValueError("entries are capped at 2000 characters")
+        return value
 
 
 class DocumentSubmission(BaseModel):
     """POST /documents body — one raw human explanation stream."""
 
-    name: str
-    text: str
-    context: str = "general"
+    name: str = Field(min_length=1, max_length=300)
+    text: str = Field(min_length=1, max_length=500_000)
+    context: str = Field(default="general", max_length=100)
 
 
 class ClaimRequest(BaseModel):
-    contributor: str
+    contributor: str = Field(min_length=1, max_length=200)
 
 
 class ResolveRequest(BaseModel):
-    packages: list[EvidenceSubmission]
+    packages: list[EvidenceSubmission] = Field(max_length=16)
 
 
 class ConceptSummary(BaseModel):

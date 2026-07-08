@@ -18,9 +18,10 @@ Requires the api extras: pip install -e ".[api]"
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 
 import allm
 from allm.api.schemas import (
@@ -29,6 +30,12 @@ from allm.api.schemas import (
     DocumentSubmission,
     EvidenceSubmission,
     ResolveRequest,
+)
+from allm.api.security import (
+    Principal,
+    RateLimiter,
+    TokenVerifier,
+    default_verifier,
 )
 from allm.api.teacher_visual import build_teacher_visual_router
 from allm.evidence import EvidenceBinder, EvidenceLedger, EvidencePackage
@@ -40,15 +47,43 @@ from allm.storage import SQLiteRecordStore
 from allm.teacher import KnowledgeState
 
 
-def create_app(db_path: Path | str) -> FastAPI:
-    """Build the API over one SQLite-backed record store."""
+def create_app(
+    db_path: Path | str,
+    *,
+    verifier: TokenVerifier | None = None,
+    rate_limiter: RateLimiter | None = None,
+) -> FastAPI:
+    """Build the API over one SQLite-backed record store.
+
+    ``verifier`` is the M50 auth hook point — the platform owns
+    identity, the core verifies what it is handed (default: env-driven,
+    see :func:`allm.api.security.default_verifier`). Reads stay open;
+    every write requires a principal and is rate-limited per principal.
+    """
     store = SQLiteRecordStore(db_path)
     graph = KnowledgeGraph(store)
     ledger = EvidenceLedger(store)
     binder = EvidenceBinder(graph, ledger)
     board = ProposalBoard(store, binder)
     documents = DocumentStore(store)
-    kel = KnowledgeEvaluationLayer(graph, store, KnowledgeState(store))
+    kel = KnowledgeEvaluationLayer(graph, store, KnowledgeState(store), ledger=ledger)
+
+    auth = verifier or default_verifier()
+    limiter = rate_limiter or RateLimiter.from_env(os.environ.get("ALLM_API_RATE_LIMIT"))
+
+    def writer(request: Request) -> Principal:
+        """Dependency guarding every mutating endpoint."""
+        header = request.headers.get("Authorization", "")
+        token = header.removeprefix("Bearer ").strip() if header else None
+        principal = auth.verify(token)
+        if principal is None:
+            raise HTTPException(401, "invalid or missing bearer token")
+        key = principal.contributor_id if not principal.anonymous else (
+            request.client.host if request.client else "unknown"
+        )
+        if not limiter.allow(key):
+            raise HTTPException(429, "rate limit exceeded; slow down")
+        return principal
 
     app = FastAPI(title="ALLM", version=allm.__version__)
     app.include_router(build_teacher_visual_router(store))
@@ -67,7 +102,11 @@ def create_app(db_path: Path | str) -> FastAPI:
     # -- knowledge ------------------------------------------------------
 
     @app.get("/concepts")
-    def list_concepts() -> list[ConceptSummary]:
+    def list_concepts(
+        limit: int = Query(default=100, ge=1, le=500),
+        offset: int = Query(default=0, ge=0),
+    ) -> list[ConceptSummary]:
+        rows = graph.concepts()[offset : offset + limit]
         return [
             ConceptSummary(
                 name=c.name,
@@ -75,7 +114,7 @@ def create_app(db_path: Path | str) -> FastAPI:
                 status=c.status,
                 evidence_count=len(c.evidence),
             )
-            for c in graph.concepts()
+            for c in rows
         ]
 
     @app.get("/concepts/{name}")
@@ -96,7 +135,9 @@ def create_app(db_path: Path | str) -> FastAPI:
     # -- contributions ------------------------------------------------------
 
     @app.post("/evidence", status_code=201)
-    def submit_evidence(submission: EvidenceSubmission) -> dict:
+    def submit_evidence(
+        submission: EvidenceSubmission, principal: Principal = Depends(writer)
+    ) -> dict:
         package = to_package(submission)
         breakdown = binder.submit(package)
         return {
@@ -105,7 +146,11 @@ def create_app(db_path: Path | str) -> FastAPI:
         }
 
     @app.post("/documents", status_code=201)
-    def submit_documents(submissions: list[DocumentSubmission]) -> dict:
+    def submit_documents(
+        submissions: list[DocumentSubmission], principal: Principal = Depends(writer)
+    ) -> dict:
+        if len(submissions) > 50:
+            raise HTTPException(413, "at most 50 documents per request")
         for doc in submissions:
             documents.ingest_text(doc.name, doc.text, context=doc.context)
         result = KDPipeline().distill(documents)
@@ -121,18 +166,27 @@ def create_app(db_path: Path | str) -> FastAPI:
     # -- proposals -------------------------------------------------------------
 
     @app.get("/proposals")
-    def list_proposals(status: str | None = None) -> list[dict]:
-        return [p.model_dump(mode="json") for p in board.proposals(status=status)]
+    def list_proposals(
+        status: str | None = None,
+        limit: int = Query(default=100, ge=1, le=500),
+        offset: int = Query(default=0, ge=0),
+    ) -> list[dict]:
+        rows = board.proposals(status=status)[offset : offset + limit]
+        return [p.model_dump(mode="json") for p in rows]
 
     @app.post("/proposals/{proposal_id}/claim")
-    def claim_proposal(proposal_id: str, request: ClaimRequest) -> dict:
+    def claim_proposal(
+        proposal_id: str, request: ClaimRequest, principal: Principal = Depends(writer)
+    ) -> dict:
         try:
             return board.claim(proposal_id, request.contributor).model_dump(mode="json")
         except ProposalError as exc:
             raise HTTPException(409, str(exc)) from exc
 
     @app.post("/proposals/{proposal_id}/resolve")
-    def resolve_proposal(proposal_id: str, request: ResolveRequest) -> dict:
+    def resolve_proposal(
+        proposal_id: str, request: ResolveRequest, principal: Principal = Depends(writer)
+    ) -> dict:
         try:
             resolved = board.resolve(
                 proposal_id, [to_package(p) for p in request.packages]
@@ -144,7 +198,7 @@ def create_app(db_path: Path | str) -> FastAPI:
     # -- measurement ---------------------------------------------------------------
 
     @app.post("/kel/evaluate")
-    def kel_evaluate() -> dict:
+    def kel_evaluate(principal: Principal = Depends(writer)) -> dict:
         report = kel.evaluate()
         return {
             "report": report.model_dump(mode="json"),

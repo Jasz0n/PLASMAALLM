@@ -222,7 +222,7 @@ the system executes code routinely.*
 | Deliverable | Notes |
 |---|---|
 | Sandboxed execution | **done (2026-07-09).** Three layers: (1) **bubblewrap namespace isolation** — read-only root, private /tmp, no network (kernel-enforced, tested against a live local daemon), only the declared workdir writable; auto-detected with loud degradation (`practice/isolation.py`); (2) **kernel rlimits** — CPU / memory / file size / no core dumps in every `SandboxExecutor` and `CodingGrader` child (`practice/limits.py`); (3) timeout + `-I` + literal binding. Repo trials run fully isolated. Remaining caveat for the security review: same-user uid inside the namespace |
-| API hardening | auth hook points (platform owns identity; core verifies tokens it's handed), rate limits, input caps, pagination |
+| API hardening | **done (2026-07-09).** `TokenVerifier` hook point (platform owns identity; core verifies what it's handed) with two honest defaults — `AllowAllVerifier` (dev, loudly logged) and `StaticTokenVerifier` (`ALLM_API_TOKEN`, constant-time compare); per-principal token-bucket rate limiting (`ALLM_API_RATE_LIMIT`, 429s); input size caps on every write schema (422/413); pagination on list endpoints. Reads open, every write guarded (`api/security.py`, `tests/test_api_security.py`) |
 | Operational surface | audit log exposed (already versioned), backup/restore, storage migrations, PostgreSQL backend for multi-process deployments |
 | Release engineering | PyPI package, published OpenAPI contract, changelog discipline |
 | Docs site | rendered architecture + module specs + API reference |
