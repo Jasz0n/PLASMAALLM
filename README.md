@@ -140,7 +140,7 @@ shared knowledge base measurably improves. Its central principle:
   (qwen2.5:14b) over the description arm's flat **0.00** — the
   generalization gap scales with model capability.
 
-- **M49 (v0.8) — open-source apprentice — in progress.** The Researcher
+- **M49 (v0.8) — open-source apprentice — done.** The Researcher
   reads **real repositories** (markdown docs, manifests, module
   docstrings through KDP with provenance; `examples/77` studies ALLM's
   own codebase — 81 concepts, 80 preserved conflicts). Repo-grounded
@@ -156,8 +156,11 @@ shared knowledge base measurably improves. Its central principle:
   outcome), exported issues, and CI runs (green supports, red
   challenges) feed the ledger and the graph — EGR measures a
   repository's past like fresh experiments (`examples/79`; dogfooded on
-  this repo's own history and CI). Open: the first real external merged
-  contribution.
+  this repo's own history and CI). Exit criterion completed for real:
+  [PR #2](https://github.com/Jasz0n/PLASMAALLM/pull/2) — a genuine bug
+  (issue #1), fix authored by qwen2.5:7b through the apprentice
+  pipeline, trialed in a disposable copy, reviewed and merged by a
+  human, approval folded back as learning signal.
 
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,
   decay prediction + maintenance optimizer, multi-objective KEL, multi-dimensional

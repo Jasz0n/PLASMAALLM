@@ -171,11 +171,12 @@ anything touching hardware.
 
 ---
 
-## M49 — Open-source apprentice (v0.8): practice on real work
+## M49 — Open-source apprentice (v0.8): practice on real work — **done 2026-07-08**
 
 *The Plasma vision made concrete: the AI takes an active part in
 open-source development — as an apprentice, never an autonomous
-committer.*
+committer. Completed the day the repo went public, with a real merged
+contribution: [PR #2](https://github.com/Jasz0n/PLASMAALLM/pull/2).*
 
 | Deliverable | Notes |
 |---|---|
@@ -196,7 +197,15 @@ committer.*
   ALLM's own repo from the graph alone.
 - One contribution goes proposal → human review → merged, with every
   step inspectable, and the review outcome measurably updates the
-  graph.
+  graph — **met (2026-07-08), for real:** issue #1 (a genuine bug: the
+  benchmark lost its finished report to a missing output directory) →
+  failing regression test by the maintainer → fix authored by
+  **qwen2.5:7b** via the apprentice pipeline → trial pass in a
+  disposable copy (`contrib_b28f49d6` / `run_a39c93d6`) → PR #2 with
+  the full evidence trail → **merged by Jasz0n** → approval recorded on
+  the ContributionBoard and folded into teacher state
+  (`record_review_outcome`: score 1.00). Every step inspectable on
+  GitHub and in the versioned store.
 - Invariant holds and is tested — **met (2026-07-08):**
   `tests/test_repo_practice.py` asserts `apply()` without approval
   raises, approval requires a named human + reason, settled reviews
