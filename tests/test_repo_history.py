@@ -94,3 +94,53 @@ def test_issues_distill_into_a_package(tmp_path: Path) -> None:
     assert package.concepts  # KDP extracted concepts from issue text
     names = " ".join(c.name.lower() for c in package.concepts)
     assert "theme" in names or "cache" in names or "registry" in names
+
+
+CI_RUNS = """\
+[
+  {"databaseId": 101, "name": "CI", "conclusion": "success", "status": "completed",
+   "event": "push", "headBranch": "master", "headSha": "aaaa1111bbbb2222",
+   "createdAt": "2026-07-08T21:21:11Z", "updatedAt": "2026-07-08T21:22:29Z"},
+  {"databaseId": 102, "name": "CI", "conclusion": "failure", "status": "completed",
+   "event": "push", "headBranch": "master", "headSha": "cccc3333dddd4444",
+   "createdAt": "2026-07-08T22:00:00Z", "updatedAt": "2026-07-08T22:01:00Z"},
+  {"databaseId": 103, "name": "CI", "conclusion": "cancelled", "status": "completed",
+   "event": "push", "headBranch": "master", "headSha": "eeee5555ffff6666",
+   "createdAt": "2026-07-08T23:00:00Z", "updatedAt": "2026-07-08T23:00:30Z"},
+  {"databaseId": 104, "name": "CI", "conclusion": null, "status": "in_progress",
+   "event": "push", "headBranch": "master", "headSha": "0000777711118888",
+   "createdAt": "2026-07-08T23:30:00Z", "updatedAt": "2026-07-08T23:30:10Z"}
+]
+"""
+
+
+def test_ci_runs_become_evidence_with_honest_outcomes(tmp_path: Path) -> None:
+    from allm.researcher.repo_history import ci_run_to_package, ci_runs_from_json
+
+    path = tmp_path / "ci_runs.json"
+    path.write_text(CI_RUNS)
+    runs = ci_runs_from_json(path)
+    assert len(runs) == 3  # the in-progress run is not evidence yet
+
+    packages = [
+        ci_run_to_package(run, repo_name="widgetlib", repo_slug="dev/widgetlib")
+        for run in runs
+    ]
+    assert [p.outcome for p in packages] == ["supported", "challenged", "inconclusive"]
+    green = packages[0]
+    assert green.kind == "experiment"
+    assert green.measurements["duration_seconds"] == 78.0
+    assert "gh run view 101 -R dev/widgetlib" in green.reproduction_steps
+    assert "aaaa1111" in green.claim
+
+    # red runs challenge the concept: replication-aware confidence sees both
+    store = SQLiteRecordStore(tmp_path / "ledger.sqlite3")
+    try:
+        ledger = EvidenceLedger(store)
+        for package in packages:
+            ledger.submit(package)
+        breakdown = ledger.confidence("software-widgetlib")
+        assert breakdown is not None
+        assert breakdown.challenge_weight > 0  # the failure is not hidden
+    finally:
+        store.close()

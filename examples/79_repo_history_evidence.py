@@ -24,6 +24,8 @@ from allm.kel import KnowledgeEvaluationLayer
 from allm.knowledge import KnowledgeGraph
 from allm.researcher import inject_package_concepts
 from allm.researcher.repo_history import (
+    ci_run_to_package,
+    ci_runs_from_json,
     commit_to_package,
     git_commits,
     package_from_issues,
@@ -89,6 +91,21 @@ def main() -> None:
           f"{counts['added']} added to the graph")
     for concept in package.concepts[:5]:
         print(f"  - {concept.name}: {concept.description[:60]}")
+
+    ci_export = os.environ.get("ALLM_CI_RUNS_JSON")
+    if ci_export:
+        print("\n=== 2b. CI runs become evidence (export via `gh run list --json ...`) ===")
+        runs = ci_runs_from_json(ci_export)
+        for run in runs:
+            ledger.submit(
+                ci_run_to_package(
+                    run,
+                    repo_name=repo.name,
+                    repo_slug=os.environ.get("ALLM_REPO_SLUG"),
+                )
+            )
+        verdicts = [str(run.get("conclusion")) for run in runs]
+        print(f"{len(runs)} completed run(s) ingested: {', '.join(verdicts)}")
 
     print("\n=== 3. KEL measures the ingested past ===")
     report = kel.evaluate()

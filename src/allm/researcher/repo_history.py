@@ -125,6 +125,61 @@ def commit_to_package(
     )
 
 
+_CI_OUTCOMES = {"success": "supported", "failure": "challenged"}
+
+
+def ci_runs_from_json(path: Path | str) -> list[dict]:
+    """Load an exported CI-run list (``gh run list --json ...``).
+
+    Expected fields per run: ``databaseId``, ``name``, ``conclusion``,
+    ``status``, ``event``, ``headBranch``, ``headSha``, ``createdAt``,
+    ``updatedAt``. The export is a plain JSON array; fetching it is the
+    forge tooling's job (``gh``), never this module's — no network.
+    """
+    rows = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(rows, list):
+        raise ValueError(f"{path} is not a JSON array of CI runs")
+    return [row for row in rows if row.get("status") == "completed"]
+
+
+def ci_run_to_package(run: dict, *, repo_name: str, repo_slug: str | None = None) -> EvidencePackage:
+    """One completed CI run → one evidence package that already happened.
+
+    A green run supports the claim "this commit's tree passes the
+    suite"; a red run challenges it; anything else (cancelled, skipped)
+    is honestly inconclusive.
+    """
+    conclusion = str(run.get("conclusion", ""))
+    sha = str(run.get("headSha", ""))
+    started = run.get("createdAt")
+    finished = run.get("updatedAt")
+    duration = None
+    if started and finished:
+        duration = (
+            datetime.fromisoformat(finished.replace("Z", "+00:00"))
+            - datetime.fromisoformat(started.replace("Z", "+00:00"))
+        ).total_seconds()
+    view_target = repo_slug or repo_name
+    return EvidencePackage.build(
+        claim=f"[{repo_name}] CI {run.get('name', 'run')} on {sha[:8]}: {conclusion}",
+        concept=f"software-{repo_name.lower()}",
+        contributor=f"ci-{run.get('event', 'run')}",
+        kind="experiment",  # the suite executed: a controlled, repeatable run
+        outcome=_CI_OUTCOMES.get(conclusion, "inconclusive"),
+        measurements={
+            "run_id": run.get("databaseId"),
+            "conclusion": conclusion,
+            "branch": run.get("headBranch"),
+            "sha": sha,
+            **({"duration_seconds": duration} if duration is not None else {}),
+        },
+        reproduction_steps=(
+            f"gh run view {run.get('databaseId')} -R {view_target}",
+            f"git checkout {sha} && pytest",
+        ),
+    )
+
+
 def issues_from_jsonl(path: Path | str) -> list[dict]:
     """Load exported issues (one JSON object per line: title/body/state/labels)."""
     rows = []

@@ -153,10 +153,11 @@ shared knowledge base measurably improves. Its central principle:
   a graded exam (approval = studyable answer; rejection = failure
   sample carrying the reviewer's reason). Repo *history* is evidence
   that already happened: commits (claim + diffstat + author + merged
-  outcome) and exported issues feed the ledger and the graph — EGR
-  measures a repository's past like fresh experiments (`examples/79`).
-  Open: CI-run history (needs a forge export format), and the first
-  real external merged contribution.
+  outcome), exported issues, and CI runs (green supports, red
+  challenges) feed the ledger and the graph — EGR measures a
+  repository's past like fresh experiments (`examples/79`; dogfooded on
+  this repo's own history and CI). Open: the first real external merged
+  contribution.
 
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,
   decay prediction + maintenance optimizer, multi-objective KEL, multi-dimensional
