@@ -19,6 +19,7 @@ from allm.practice.contribution import (
     ContributionBoard,
 )
 from allm.practice.executor import SandboxExecutor, bind_variables
+from allm.practice.limits import REPO_TASK_LIMITS, ResourceLimits
 from allm.practice.feedback import (
     contribution_question,
     record_review_outcome,
@@ -42,6 +43,8 @@ __all__ = [
     "ContributionBoard",
     "PracticeProcedure",
     "PracticeRun",
+    "REPO_TASK_LIMITS",
+    "ResourceLimits",
     "SandboxExecutor",
     "SweepResult",
     "VariableSpec",

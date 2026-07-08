@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict
 from allm.core.logging import get_logger
 from allm.kdp.types import content_hash
 from allm.practice.executor import SandboxExecutor
+from allm.practice.limits import REPO_TASK_LIMITS
 from allm.practice.types import PracticeProcedure, PracticeRun, VariableSpec
 
 logger = get_logger("practice.repo")
@@ -57,6 +58,7 @@ def repo_test_procedure(
         topic=f"software-{repo.name.lower()}",
         timeout_seconds=timeout_seconds,
         workdir=str(repo),
+        limits=REPO_TASK_LIMITS,
     )
 
 

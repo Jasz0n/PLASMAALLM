@@ -76,6 +76,7 @@ class SandboxExecutor:
                 text=True,
                 timeout=procedure.timeout_seconds,
                 cwd=procedure.workdir,
+                preexec_fn=procedure.limits.preexec(),
             )
             duration = time.perf_counter() - started
             status = "ok" if completed.returncode == 0 else "crash"

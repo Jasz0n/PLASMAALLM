@@ -111,10 +111,15 @@ looked least.
 
 ## Stage 3 — Execution (sandboxed)
 
-Subprocess isolation now; OS-level isolation (container/jail) arrives
-with Roadmap M50 and is a prerequisite for running anything untrusted.
-Everything observable is captured; crashes and timeouts are outcomes,
-not errors.
+Subprocess isolation plus **kernel resource limits** (M50):
+`ResourceLimits` applies POSIX rlimits — CPU seconds, address space,
+file size, core dumps off — in the child before `exec`, so the kernel
+stops CPU spins, memory bombs and disk-filling that a wall-clock
+timeout alone cannot. Repo trials get a roomier budget
+(`REPO_TASK_LIMITS`); the `CodingGrader` shares the same guard. Full
+OS isolation (container/jail) remains the M50 exit bar for running
+anything untrusted. Everything observable is captured; crashes and
+timeouts are outcomes, not errors.
 
 ## Stage 4 — Recording
 

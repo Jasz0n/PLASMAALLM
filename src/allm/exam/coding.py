@@ -2,12 +2,13 @@
 
 The student's answer is a Python program; ``expected`` is the exact
 stdout it must produce. Programs run in a subprocess with a hard
-timeout and no shell.
+timeout, no shell, and kernel resource limits (CPU, memory, file size —
+M50): the kernel stops what the timeout alone cannot.
 
-Research-platform caveat (documented, deliberate): submissions run with
-the experimenter's own privileges — fine while students are local
-models under our control, but this grader must gain OS-level sandboxing
-before any untrusted model output is graded. Tracked in the roadmap.
+Research-platform caveat (documented, deliberate): submissions still
+run with the experimenter's own privileges — rlimits are the floor;
+full OS isolation (container/jail) before grading untrusted third-party
+submissions remains the M50 exit bar.
 """
 
 from __future__ import annotations
@@ -35,8 +36,13 @@ def extract_code(text: str) -> str:
 class CodingGrader:
     """Executes Python answers and checks their stdout."""
 
-    def __init__(self, timeout_seconds: float = 5.0) -> None:
+    def __init__(
+        self, timeout_seconds: float = 5.0, limits: "ResourceLimits | None" = None
+    ) -> None:
+        from allm.practice.limits import ResourceLimits
+
         self._timeout = timeout_seconds
+        self._limits = limits or ResourceLimits()
 
     def grade(self, question: Question, answer: Answer) -> QuestionResult:
         if question.expected is None:
@@ -48,6 +54,7 @@ class CodingGrader:
                 capture_output=True,
                 text=True,
                 timeout=self._timeout,
+                preexec_fn=self._limits.preexec(),
             )
         except subprocess.TimeoutExpired:
             return self._result(

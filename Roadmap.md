@@ -221,7 +221,7 @@ the system executes code routinely.*
 
 | Deliverable | Notes |
 |---|---|
-| Sandboxed execution | OS-level isolation (container/jail) for `CodingGrader` and the Practice Engine — untrusted model output and human submissions never run in the host process |
+| Sandboxed execution | **kernel rlimits done (2026-07-08):** `ResourceLimits` (CPU / memory / file size / no core dumps) enforced in every `SandboxExecutor` and `CodingGrader` child — memory bombs, CPU spins and disk-filling stopped by the kernel, tested (`tests/test_resource_limits.py`). **Open:** container/jail isolation before untrusted third-party submissions run |
 | API hardening | auth hook points (platform owns identity; core verifies tokens it's handed), rate limits, input caps, pagination |
 | Operational surface | audit log exposed (already versioned), backup/restore, storage migrations, PostgreSQL backend for multi-process deployments |
 | Release engineering | PyPI package, published OpenAPI contract, changelog discipline |

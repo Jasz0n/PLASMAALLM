@@ -15,6 +15,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from allm.kdp.types import content_hash
+from allm.practice.limits import ResourceLimits
 
 RunStatus = Literal["ok", "crash", "timeout"]
 
@@ -49,6 +50,8 @@ class PracticeProcedure(BaseModel):
     # Repo-grounded procedures (M49) run inside a working tree; None
     # keeps the classic behaviour (current process cwd).
     workdir: str | None = None
+    # Kernel-enforced budget (M50): CPU, memory, file size.
+    limits: ResourceLimits = ResourceLimits()
 
     @property
     def concept_name(self) -> str:
