@@ -66,9 +66,11 @@ TEACHER_UI_HTML = """<!DOCTYPE html>
   <script>
     let sourceKind = "";
     let statusFilter = "pending";
+    // Works whether served at /teacher or under a proxy prefix like /allm/teacher.
+    const PREFIX = location.pathname.replace(/\/teacher\/?$/, "");
 
     async function loadSession() {
-      const res = await fetch("/teacher/session");
+      const res = await fetch(PREFIX + "/teacher/session");
       const panel = document.getElementById("sessionPanel");
       if (!res.ok) {
         panel.innerHTML = "<span>No active KEL pause session.</span>";
@@ -85,7 +87,7 @@ TEACHER_UI_HTML = """<!DOCTYPE html>
     }
 
     async function loadSummary() {
-      const res = await fetch("/teacher/visual-review/summary");
+      const res = await fetch(PREFIX + "/teacher/visual-review/summary");
       const data = await res.json();
       document.getElementById("summary").innerHTML = [
         `<span>Total: ${data.total_briefs}</span>`,
@@ -131,7 +133,7 @@ TEACHER_UI_HTML = """<!DOCTYPE html>
     }
 
     async function decide(briefId, approved) {
-      await fetch(`/teacher/visual-briefs/${encodeURIComponent(briefId)}/approve`, {
+      await fetch(PREFIX + `/teacher/visual-briefs/${encodeURIComponent(briefId)}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ approved, approved_by: "teacher-ui" }),
@@ -144,7 +146,7 @@ TEACHER_UI_HTML = """<!DOCTYPE html>
     async function loadBriefs() {
       const params = new URLSearchParams({ status: statusFilter });
       if (sourceKind) params.set("source_kind", sourceKind);
-      const res = await fetch(`/teacher/visual-briefs?${params}`);
+      const res = await fetch(PREFIX + `/teacher/visual-briefs?${params}`);
       const rows = await res.json();
       const list = document.getElementById("list");
       if (!rows.length) {
@@ -167,7 +169,7 @@ TEACHER_UI_HTML = """<!DOCTYPE html>
     }
 
     document.getElementById("exportBtn").onclick = async () => {
-      const res = await fetch("/teacher/visual-exports", { method: "POST" });
+      const res = await fetch(PREFIX + "/teacher/visual-exports", { method: "POST" });
       const data = await res.json();
       document.getElementById("status").textContent =
         `Exported ${data.export_count} package(s); ${data.student_exports_total} total student exports.`;
@@ -176,7 +178,7 @@ TEACHER_UI_HTML = """<!DOCTYPE html>
     };
 
     document.getElementById("resumeBtn").onclick = async () => {
-      const res = await fetch("/teacher/session/resume", { method: "POST" });
+      const res = await fetch(PREFIX + "/teacher/session/resume", { method: "POST" });
       const data = await res.json();
       document.getElementById("status").textContent =
         `Resume signaled for session ${data.session_id} (${data.status}).`;
