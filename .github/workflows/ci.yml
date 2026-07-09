@@ -74,6 +74,7 @@ jobs:
             78_apprentice_contribution \
             79_repo_history_evidence \
             80_workshop_loop \
+            81_client_end_to_end \
           ; do
             echo "=== examples/$example.py"
             python "examples/$example.py" > /dev/null

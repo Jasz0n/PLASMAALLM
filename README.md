@@ -22,6 +22,7 @@ shared knowledge base measurably improves. Its central principle:
 - **Module specs:** [`KDP.md`](KDP.md), [`KEL.md`](KEL.md), [`PRACTICE.md`](PRACTICE.md)
 - **Architecture & decisions:** [`docs/architecture.md`](docs/architecture.md)
 - **Deploy:** [`docs/deploy.md`](docs/deploy.md) — `docker compose up`, auth on, persistent store
+- **Build a client:** [`docs/client-guide.md`](docs/client-guide.md) — the API + `allm.client` for integrators
 - **Contributing:** [`CONTRIBUTING.md`](CONTRIBUTING.md) · MIT licensed
 
 ## Status
@@ -205,8 +206,13 @@ shared knowledge base measurably improves. Its central principle:
   boundary:** configurable CORS, a **Server-Sent Events** feed
   (`GET /events/stream`, auto-resuming over `seq`) so a web client gets
   live updates without polling, and a consistent JSON error envelope.
-  Next: a typed client + "build a client" guide, a seeded demo scenario,
-  and the pilot.
+  **Integration kit:** a zero-dependency typed client
+  ([`allm.client`](src/allm/client)) covering the whole contributor loop,
+  a ["build a client" guide](docs/client-guide.md) (Python + a browser
+  `EventSource` sketch), and a runnable
+  [end-to-end example](examples/81_client_end_to_end.py) — a frontend dev
+  is productive without reading engine source. Next: a seeded demo
+  scenario, live SocialServer wiring, and the pilot.
 
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,
   decay prediction + maintenance optimizer, multi-objective KEL, multi-dimensional
