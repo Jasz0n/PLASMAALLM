@@ -28,6 +28,7 @@ from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 
 import allm
+from allm.events import EventLog
 from allm.evidence import EvidenceBinder, EvidenceLedger
 from allm.kel import KnowledgeEvaluationLayer
 from allm.knowledge import KnowledgeGraph
@@ -61,6 +62,7 @@ def system_state(store: RecordStore, *, audit_limit: int = 25) -> dict:
     contributions = ContributionBoard(store)
     state = KnowledgeState(store)
     kel = KnowledgeEvaluationLayer(graph, store, state, ledger=ledger)
+    events = EventLog(store)
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -70,6 +72,10 @@ def system_state(store: RecordStore, *, audit_limit: int = 25) -> dict:
         "evidence": _evidence_view(ledger),
         "proposals": _proposals_view(board),
         "contributions": _contributions_view(contributions),
+        "events": {
+            "total": events.count(),
+            "recent": [e.model_dump(mode="json") for e in events.latest(limit=12)],
+        },
         "census": [
             {
                 "namespace": s.namespace,
@@ -413,6 +419,18 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         `<div class="scroll"><table>
            <tr><th>namespace</th><th class="num">keys</th><th class="num">records</th><th>last write</th></tr>
            ${censusRows || `<tr><td colspan="4" class="muted">store is empty</td></tr>`}
+         </table></div>`));
+
+      // Event feed (M51 live feed)
+      const ev = s.events;
+      const evRows = ev.recent.map(e => {
+        const d = Object.entries(e.data).map(([k, v]) => `${k}=${v}`).join(" · ");
+        return `<tr><td class="num">#${e.seq}</td><td><span class="chip">${e.type}</span></td><td>${e.subject}</td><td class="muted">${d}</td></tr>`;
+      }).join("");
+      html.push(panel("Live Event Feed", `platform stream · ${ev.total} event(s) total — proposals, resolutions, confidence shifts`,
+        `<div class="scroll"><table>
+           <tr><th class="num">seq</th><th>type</th><th>subject</th><th>data</th></tr>
+           ${evRows || `<tr><td colspan="4" class="muted">no events yet</td></tr>`}
          </table></div>`));
 
       // Audit

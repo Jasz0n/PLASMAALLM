@@ -249,11 +249,19 @@ speaks the platform's streaming layer.*
 
 | Deliverable | Notes |
 |---|---|
-| Frozen wire format | evidence-package spec published; platform teams build against it |
-| Event stream | webhooks for new proposals, resolutions, confidence changes — the frontend's live feed |
+| Frozen wire format | evidence-package spec published; platform teams build against it. `docs/openapi.json` (21 paths) already freezes every request/response schema with a CI drift guard; the remaining step is a standalone, versioned evidence-package contract decoupled from the HTTP transport |
+| Event stream | **slice 1 done (2026-07-09).** `allm.events.EventLog` — ordered, append-only domain events over the same versioned store, polled by cursor (`GET /events?since=<seq>`, never miss or replay). The API emits `evidence.submitted` + `confidence.changed`, `proposal.opened`, `proposal.resolved`; the dashboard mirrors the feed on its read side (`api/dashboard.py`, `tests/test_events.py`). **Open:** outbound webhook dispatch (outward-facing, so it inherits the human-approval / opt-in posture), plus `contribution.*` events. |
 | Incentives stay outside | identity/reward mechanics live entirely in the platform; the core sees opaque contributor ids; replication-aware confidence remains the anti-gaming primitive (popularity cannot move belief) |
 | Live workshop loop | LiveKit observation → synced evidence → KDP, on real platform streams instead of fixtures |
 | Pilot community | one narrow domain, real contributors, measured by conflict-resolution efficiency, proposal throughput and **EGR** (evidence growth rate — already implemented and tracked, KEL.md 3.7) |
+
+**Kickoff sequencing.** (1) *Event stream v0* — done, the push side of
+the live feed pairing with the M50 dashboard's read side. (2) *Frozen
+wire format* — publish the standalone evidence-package contract so
+platform teams can build without reading our source. (3) *Webhook
+dispatch* — outbound delivery of the event stream, opt-in and
+approval-gated (it is an outward-facing action). (4) *Live workshop
+loop* on real LiveKit streams. (5) *Pilot* against the exit criterion.
 
 **Exit criterion** — unchanged, it was right the first time: one real
 contested claim goes through the full public loop — discussion → KDP →

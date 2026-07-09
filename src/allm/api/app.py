@@ -39,6 +39,7 @@ from allm.api.security import (
 )
 from allm.api.dashboard import build_dashboard_router
 from allm.api.teacher_visual import build_teacher_visual_router
+from allm.events import EventLog
 from allm.evidence import EvidenceBinder, EvidenceLedger, EvidencePackage
 from allm.kdp import DocumentStore, GraphInjector, KDPipeline
 from allm.kel import KnowledgeEvaluationLayer
@@ -67,6 +68,7 @@ def create_app(
     binder = EvidenceBinder(graph, ledger)
     board = ProposalBoard(store, binder)
     documents = DocumentStore(store)
+    events = EventLog(store)
     kel = KnowledgeEvaluationLayer(graph, store, KnowledgeState(store), ledger=ledger)
 
     auth = verifier or default_verifier()
@@ -142,6 +144,18 @@ def create_app(
     ) -> dict:
         package = to_package(submission)
         breakdown = binder.submit(package)
+        events.emit(
+            "evidence.submitted",
+            package.id,
+            {"concept": package.concept, "outcome": package.outcome,
+             "contributor": package.contributor},
+        )
+        events.emit(
+            "confidence.changed",
+            package.concept,
+            {"value": breakdown.value, "contributors": breakdown.contributors,
+             "independent_replications": breakdown.independent_replications},
+        )
         return {
             "package_id": package.id,
             "confidence": breakdown.model_dump(mode="json"),
@@ -157,7 +171,15 @@ def create_app(
             documents.ingest_text(doc.name, doc.text, context=doc.context)
         result = KDPipeline().distill(documents)
         report = GraphInjector(graph, store).inject(result)
-        proposals = [board.from_conflict(c).id for c in result.conflicts]
+        proposals = []
+        for conflict in result.conflicts:
+            proposal = board.from_conflict(conflict)
+            proposals.append(proposal.id)
+            events.emit(
+                "proposal.opened",
+                proposal.id,
+                {"question": proposal.question, "origin": "conflict"},
+            )
         return {
             "units": len(result.units),
             "conflicts": len(result.conflicts),
@@ -195,6 +217,11 @@ def create_app(
             )
         except ProposalError as exc:
             raise HTTPException(409, str(exc)) from exc
+        events.emit(
+            "proposal.resolved",
+            resolved.id,
+            {"concept": resolved.concept, "status": resolved.status},
+        )
         return resolved.model_dump(mode="json")
 
     # -- operations ------------------------------------------------------
@@ -217,6 +244,25 @@ def create_app(
             }
             for r in store.audit(namespace, limit=limit, offset=offset)
         ]
+
+    # -- event stream ----------------------------------------------------
+
+    @app.get("/events")
+    def event_stream(
+        since: int = Query(default=0, ge=0),
+        limit: int = Query(default=100, ge=1, le=500),
+    ) -> dict:
+        """The platform's live feed: events with ``seq > since``, in order.
+
+        Poll with ``since`` set to the last ``seq`` you saw; ``cursor`` in
+        the response is where to resume so nothing is missed or replayed.
+        """
+        batch = events.since(since, limit=limit)
+        return {
+            "events": [e.model_dump(mode="json") for e in batch],
+            "cursor": batch[-1].seq if batch else since,
+            "total": events.count(),
+        }
 
     # -- measurement ---------------------------------------------------------------
 
