@@ -488,7 +488,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       if (window.__ALLM_STATE__) { render(window.__ALLM_STATE__); return; }  // snapshot mode
       document.getElementById("meta").textContent = "loading…";
       try {
-        const res = await fetch("/dashboard/state");
+        // Derive the state URL from this page's path, so the dashboard works
+        // whether it's served at / or under a prefix like /allm (behind a proxy).
+        const url = location.pathname.replace(/\/+$/, "") + "/state";
+        const res = await fetch(url);
         render(await res.json());
       } catch (err) {
         document.getElementById("meta").textContent = "failed to load: " + err;
