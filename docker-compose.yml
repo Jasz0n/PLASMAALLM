@@ -1,0 +1,56 @@
+# ALLM — deployable core (Roadmap M52).
+#
+#   ALLM_API_TOKEN=$(openssl rand -hex 24) docker compose up --build
+#
+# Auth is ON by default: compose refuses to start without a token, so the
+# API is never accidentally exposed open. Data lives on a named volume and
+# survives `docker compose down` (use `down -v` to wipe it).
+
+services:
+  api:
+    build: .
+    image: allm-api:latest
+    ports:
+      - "${ALLM_PORT:-8000}:8000"
+    environment:
+      # No default — compose fails loudly if unset, so auth is never off by accident.
+      ALLM_API_TOKEN: ${ALLM_API_TOKEN:?set ALLM_API_TOKEN, e.g. export ALLM_API_TOKEN=$(openssl rand -hex 24)}
+      ALLM_STORAGE__PATH: /data/allm.sqlite3
+      ALLM_API_RATE_LIMIT: ${ALLM_API_RATE_LIMIT:-60/60}
+      ALLM_LOGGING__LEVEL: ${ALLM_LOG_LEVEL:-INFO}
+      # CORS for a browser client arrives in the next M52 slice.
+    volumes:
+      - allm-data:/data
+    restart: unless-stopped
+    healthcheck:
+      # Readiness (not liveness): only healthy once the store answers.
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/ready',timeout=2).status==200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+  # Opt-in scheduled backups:  docker compose --profile backup up
+  # Consistent online snapshots (SQLite backup API) to a separate volume.
+  backup:
+    image: allm-api:latest
+    profiles: ["backup"]
+    depends_on:
+      - api
+    environment:
+      ALLM_BACKUP_INTERVAL: ${ALLM_BACKUP_INTERVAL:-3600}
+    volumes:
+      - allm-data:/data
+      - allm-backups:/backups
+    restart: unless-stopped
+    entrypoint: ["sh", "-c"]
+    command:
+      - >
+        while true; do
+          allm db backup --db /data/allm.sqlite3 "/backups/allm-$(date +%Y%m%d-%H%M%S).sqlite3" || true;
+          sleep "${ALLM_BACKUP_INTERVAL:-3600}";
+        done
+
+volumes:
+  allm-data:
+  allm-backups:

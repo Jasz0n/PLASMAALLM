@@ -1,0 +1,26 @@
+# Keep the build context small and secret-free.
+.git
+.github
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.mypy_cache
+htmlcov
+dist
+build
+*.egg-info
+
+# Never bake data, secrets or local config into the image.
+.env
+*.sqlite3
+experiments/
+books/
+transcripts/
+scratchpad/
+.claude/
+
+# Docs and tests are not needed to run the API.
+tests/
+docs/
+examples/

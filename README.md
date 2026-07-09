@@ -21,6 +21,7 @@ shared knowledge base measurably improves. Its central principle:
 - **Platform vision:** [`smallVision.md`](smallVision.md)
 - **Module specs:** [`KDP.md`](KDP.md), [`KEL.md`](KEL.md), [`PRACTICE.md`](PRACTICE.md)
 - **Architecture & decisions:** [`docs/architecture.md`](docs/architecture.md)
+- **Deploy:** [`docs/deploy.md`](docs/deploy.md) — `docker compose up`, auth on, persistent store
 - **Contributing:** [`CONTRIBUTING.md`](CONTRIBUTING.md) · MIT licensed
 
 ## Status

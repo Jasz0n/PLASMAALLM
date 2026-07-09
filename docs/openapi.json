@@ -1118,6 +1118,7 @@
     },
     "/health": {
       "get": {
+        "description": "Liveness: the process is up. Cheap, never touches the store.",
         "operationId": "health_health_get",
         "responses": {
           "200": {
@@ -1330,6 +1331,27 @@
           }
         },
         "summary": "Resolve Proposal"
+      }
+    },
+    "/ready": {
+      "get": {
+        "description": "Readiness: the store answers, so it is safe to route traffic here.\n\nDistinct from ``/health`` on purpose \u2014 an orchestrator keeps the\ncontainer alive on ``/health`` but withholds traffic until\n``/ready`` passes (e.g. the volume mounted and the DB opened).",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Ready Ready Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Ready"
       }
     },
     "/teacher/": {

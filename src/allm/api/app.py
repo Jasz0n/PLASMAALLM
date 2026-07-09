@@ -106,7 +106,22 @@ def create_app(
 
     @app.get("/health")
     def health() -> dict:
+        """Liveness: the process is up. Cheap, never touches the store."""
         return {"status": "ok", "version": allm.__version__}
+
+    @app.get("/ready")
+    def ready() -> dict:
+        """Readiness: the store answers, so it is safe to route traffic here.
+
+        Distinct from ``/health`` on purpose — an orchestrator keeps the
+        container alive on ``/health`` but withholds traffic until
+        ``/ready`` passes (e.g. the volume mounted and the DB opened).
+        """
+        try:
+            store.get("_readiness", "_probe")  # cheap indexed round-trip
+        except Exception as exc:  # pragma: no cover - only on a broken store
+            raise HTTPException(503, f"storage not ready: {exc}") from exc
+        return {"status": "ready", "version": allm.__version__}
 
     @app.get("/wire")
     def wire() -> dict:
