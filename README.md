@@ -21,6 +21,7 @@ shared knowledge base measurably improves. Its central principle:
 - **Platform vision:** [`smallVision.md`](smallVision.md)
 - **Module specs:** [`KDP.md`](KDP.md), [`KEL.md`](KEL.md), [`PRACTICE.md`](PRACTICE.md)
 - **Architecture & decisions:** [`docs/architecture.md`](docs/architecture.md)
+- **Operator quickstart:** [`docs/quickstart.md`](docs/quickstart.md) — zero to a live, seeded ALLM in ~5 minutes
 - **Deploy:** [`docs/deploy.md`](docs/deploy.md) — `docker compose up`, auth on, persistent store
 - **Build a client:** [`docs/client-guide.md`](docs/client-guide.md) — the API + `allm.client` for integrators
 - **Contributing:** [`CONTRIBUTING.md`](CONTRIBUTING.md) · MIT licensed
