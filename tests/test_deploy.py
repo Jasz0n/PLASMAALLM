@@ -29,6 +29,22 @@ def test_health_and_ready_are_open_and_distinct(tmp_path: Path) -> None:
         assert client.get("/ready").status_code == 200
 
 
+def test_root_path_for_subpath_hosting(tmp_path: Path, monkeypatch) -> None:
+    pytest.importorskip("fastapi")
+    from allm.api.app import create_app, create_default_app
+
+    # explicit param: FastAPI learns its external prefix, routes stay put
+    app = create_app(tmp_path / "a.sqlite3", root_path="/allm")
+    assert app.root_path == "/allm"
+    assert "/health" in app.openapi()["paths"]  # routes unchanged by the prefix
+
+    # env-driven, trailing slash tolerated
+    monkeypatch.setenv("ALLM_ROOT_PATH", "/allm/")
+    monkeypatch.setenv("ALLM_STORAGE__PATH", str(tmp_path / "b.sqlite3"))
+    monkeypatch.setenv("ALLM_API_TOKEN", "z" * 20)
+    assert create_default_app().root_path == "/allm"
+
+
 def test_default_factory_honours_storage_env(tmp_path: Path, monkeypatch) -> None:
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient

@@ -80,6 +80,7 @@ def create_app(
     rate_limiter: RateLimiter | None = None,
     webhook_sender: WebhookSender | None = None,
     cors_origins: list[str] | None = None,
+    root_path: str = "",
 ) -> FastAPI:
     """Build the API over one SQLite-backed record store.
 
@@ -116,7 +117,11 @@ def create_app(
             raise HTTPException(429, "rate limit exceeded; slow down")
         return principal
 
-    app = FastAPI(title="ALLM", version=allm.__version__)
+    # root_path tells FastAPI the external prefix a proxy serves us under
+    # (e.g. "/allm"), so the interactive /docs and OpenAPI URLs are correct
+    # behind a prefix-stripping reverse proxy. The routes themselves are
+    # unchanged; the browser UIs derive their own prefix client-side.
+    app = FastAPI(title="ALLM", version=allm.__version__, root_path=root_path)
 
     # -- browser-ready boundary (M52) -----------------------------------
     origins = cors_origins if cors_origins is not None else _cors_from_env()
@@ -469,9 +474,13 @@ def create_app(
 
 
 def create_default_app() -> FastAPI:
-    """Factory for ``uvicorn --factory``; honours ALLM_STORAGE__PATH."""
+    """Factory for ``uvicorn --factory``; honours ALLM_STORAGE__PATH and,
+    for subpath hosting behind a proxy, ALLM_ROOT_PATH (e.g. ``/allm``)."""
     from allm.core.config import load_config
 
     config = load_config().resolved()
     config.storage.path.parent.mkdir(parents=True, exist_ok=True)
-    return create_app(config.storage.path)
+    return create_app(
+        config.storage.path,
+        root_path=os.environ.get("ALLM_ROOT_PATH", "").rstrip("/"),
+    )

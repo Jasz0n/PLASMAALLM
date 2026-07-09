@@ -20,6 +20,8 @@ services:
       ALLM_LOGGING__LEVEL: ${ALLM_LOG_LEVEL:-INFO}
       # Browser origins allowed cross-site (comma-separated). Empty = same-origin only.
       ALLM_API_CORS_ORIGINS: ${ALLM_API_CORS_ORIGINS:-}
+      # Set to the external prefix (e.g. /allm) when a proxy serves ALLM under a subpath.
+      ALLM_ROOT_PATH: ${ALLM_ROOT_PATH:-}
     volumes:
       - allm-data:/data
     restart: unless-stopped

@@ -59,7 +59,19 @@ existing store needs `--force`.
 | `ALLM_API_RATE_LIMIT` | `60/60` | Per-principal token bucket (`requests/seconds`). |
 | `ALLM_API_CORS_ORIGINS` | *(none)* | Comma-separated browser origins allowed cross-site (e.g. `https://app.example`). Empty = same-origin only. `*` = any (dev). |
 | `ALLM_PORT` | `8000` | Host port to publish. |
+| `ALLM_ROOT_PATH` | *(none)* | External prefix when a proxy serves ALLM under a subpath (e.g. `/allm`) — makes the interactive `/docs` and OpenAPI URLs correct. |
 | `ALLM_LOG_LEVEL` | `INFO` | Log level. |
+
+### Behind a reverse proxy at a subpath
+
+Serving under, say, `https://host/allm/` (proxy strips `/allm` before
+forwarding)? The dashboard and Teacher UIs derive their own path prefix
+client-side, so they just work. Set `ALLM_ROOT_PATH=/allm` as well so the
+interactive `/allm/docs` and OpenAPI URLs resolve correctly:
+
+```bash
+export ALLM_ROOT_PATH=/allm
+```
 
 ### A browser client
 
