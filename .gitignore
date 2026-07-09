@@ -25,3 +25,6 @@ books/*
 !books/sidecar_templates/
 dist/
 build/
+
+# Local discussion / scratch notes
+answers.md
