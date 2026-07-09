@@ -1,0 +1,483 @@
+{
+  "description": "The public contract platform teams build against: how to submit evidence and documents, drive the proposal lifecycle, and read confidence and the event feed. Versioned independently of the engine; schemas are generated from the implementation.",
+  "generated_by": "0.9.0",
+  "requests": {
+    "ClaimRequest": {
+      "properties": {
+        "contributor": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Contributor",
+          "type": "string"
+        }
+      },
+      "required": [
+        "contributor"
+      ],
+      "title": "ClaimRequest",
+      "type": "object"
+    },
+    "DocumentSubmission": {
+      "description": "POST /documents body \u2014 one raw human explanation stream.",
+      "properties": {
+        "context": {
+          "default": "general",
+          "maxLength": 100,
+          "title": "Context",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 500000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "text"
+      ],
+      "title": "DocumentSubmission",
+      "type": "object"
+    },
+    "EvidenceSubmission": {
+      "$defs": {
+        "Artifact": {
+          "description": "Reference to a supporting file (design, photo, dataset, code).\n\nThe core never stores blobs; ``uri`` points into the platform's\nstorage and ``sha256`` pins the exact bytes for reproducibility.",
+          "properties": {
+            "media_type": {
+              "default": "application/octet-stream",
+              "title": "Media Type",
+              "type": "string"
+            },
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Sha256"
+            },
+            "uri": {
+              "title": "Uri",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "uri"
+          ],
+          "title": "Artifact",
+          "type": "object"
+        }
+      },
+      "description": "POST /evidence body \u2014 a package without an id (the core mints it).\n\nSize caps (M50): generous for honest contributions, hostile to\npayload abuse. Artifacts are references, never blobs \u2014 the platform\nstores files.",
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/Artifact"
+          },
+          "maxItems": 32,
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "claim": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Claim",
+          "type": "string"
+        },
+        "concept": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Concept",
+          "type": "string"
+        },
+        "contributor": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Contributor",
+          "type": "string"
+        },
+        "environment": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Environment",
+          "type": "object"
+        },
+        "kind": {
+          "default": "experiment",
+          "enum": [
+            "experiment",
+            "replication",
+            "paper",
+            "transcript",
+            "debate",
+            "observation"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "measurements": {
+          "additionalProperties": true,
+          "title": "Measurements",
+          "type": "object"
+        },
+        "outcome": {
+          "enum": [
+            "supported",
+            "challenged",
+            "inconclusive"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "related_concepts": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Related Concepts",
+          "type": "array"
+        },
+        "replicates": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Replicates"
+        },
+        "reproduction_steps": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Reproduction Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "claim",
+        "concept",
+        "contributor",
+        "outcome"
+      ],
+      "title": "EvidenceSubmission",
+      "type": "object"
+    },
+    "ResolveRequest": {
+      "$defs": {
+        "Artifact": {
+          "description": "Reference to a supporting file (design, photo, dataset, code).\n\nThe core never stores blobs; ``uri`` points into the platform's\nstorage and ``sha256`` pins the exact bytes for reproducibility.",
+          "properties": {
+            "media_type": {
+              "default": "application/octet-stream",
+              "title": "Media Type",
+              "type": "string"
+            },
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Sha256"
+            },
+            "uri": {
+              "title": "Uri",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "uri"
+          ],
+          "title": "Artifact",
+          "type": "object"
+        },
+        "EvidenceSubmission": {
+          "description": "POST /evidence body \u2014 a package without an id (the core mints it).\n\nSize caps (M50): generous for honest contributions, hostile to\npayload abuse. Artifacts are references, never blobs \u2014 the platform\nstores files.",
+          "properties": {
+            "artifacts": {
+              "items": {
+                "$ref": "#/$defs/Artifact"
+              },
+              "maxItems": 32,
+              "title": "Artifacts",
+              "type": "array"
+            },
+            "claim": {
+              "maxLength": 2000,
+              "minLength": 1,
+              "title": "Claim",
+              "type": "string"
+            },
+            "concept": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Concept",
+              "type": "string"
+            },
+            "contributor": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Contributor",
+              "type": "string"
+            },
+            "environment": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "title": "Environment",
+              "type": "object"
+            },
+            "kind": {
+              "default": "experiment",
+              "enum": [
+                "experiment",
+                "replication",
+                "paper",
+                "transcript",
+                "debate",
+                "observation"
+              ],
+              "title": "Kind",
+              "type": "string"
+            },
+            "measurements": {
+              "additionalProperties": true,
+              "title": "Measurements",
+              "type": "object"
+            },
+            "outcome": {
+              "enum": [
+                "supported",
+                "challenged",
+                "inconclusive"
+              ],
+              "title": "Outcome",
+              "type": "string"
+            },
+            "related_concepts": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 32,
+              "title": "Related Concepts",
+              "type": "array"
+            },
+            "replicates": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Replicates"
+            },
+            "reproduction_steps": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 64,
+              "title": "Reproduction Steps",
+              "type": "array"
+            }
+          },
+          "required": [
+            "claim",
+            "concept",
+            "contributor",
+            "outcome"
+          ],
+          "title": "EvidenceSubmission",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "packages": {
+          "items": {
+            "$ref": "#/$defs/EvidenceSubmission"
+          },
+          "maxItems": 16,
+          "title": "Packages",
+          "type": "array"
+        }
+      },
+      "required": [
+        "packages"
+      ],
+      "title": "ResolveRequest",
+      "type": "object"
+    }
+  },
+  "responses": {
+    "ConceptSummary": {
+      "properties": {
+        "confidence": {
+          "title": "Confidence",
+          "type": "number"
+        },
+        "evidence_count": {
+          "title": "Evidence Count",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "confidence",
+        "status",
+        "evidence_count"
+      ],
+      "title": "ConceptSummary",
+      "type": "object"
+    },
+    "ConfidenceBreakdown": {
+      "description": "Why a concept's evidential confidence is what it is.\n\nReturned alongside every confidence value so \"nothing is hidden\" \u2014\nfuture researchers can inspect why confidence is high or low.",
+      "properties": {
+        "challenge_weight": {
+          "title": "Challenge Weight",
+          "type": "number"
+        },
+        "concept": {
+          "title": "Concept",
+          "type": "string"
+        },
+        "contributors": {
+          "title": "Contributors",
+          "type": "integer"
+        },
+        "inconclusive_weight": {
+          "title": "Inconclusive Weight",
+          "type": "number"
+        },
+        "independent_replications": {
+          "title": "Independent Replications",
+          "type": "integer"
+        },
+        "packages": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Packages",
+          "type": "array"
+        },
+        "support_weight": {
+          "title": "Support Weight",
+          "type": "number"
+        },
+        "value": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "concept",
+        "value",
+        "support_weight",
+        "challenge_weight",
+        "inconclusive_weight",
+        "contributors",
+        "independent_replications",
+        "packages"
+      ],
+      "title": "ConfidenceBreakdown",
+      "type": "object"
+    },
+    "Event": {
+      "description": "One thing that happened, in order.",
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "data": {
+          "additionalProperties": true,
+          "title": "Data",
+          "type": "object"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "subject": {
+          "title": "Subject",
+          "type": "string"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "type",
+        "subject",
+        "created_at"
+      ],
+      "title": "Event",
+      "type": "object"
+    }
+  },
+  "title": "ALLM evidence wire format",
+  "vocabularies": {
+    "Outcome": [
+      "supported",
+      "challenged",
+      "inconclusive"
+    ],
+    "PackageKind": [
+      "experiment",
+      "replication",
+      "paper",
+      "transcript",
+      "debate",
+      "observation"
+    ]
+  },
+  "wire_version": "1.0.0"
+}

@@ -1532,6 +1532,27 @@
           "teacher"
         ]
       }
+    },
+    "/wire": {
+      "get": {
+        "description": "The frozen wire contract (M51) \u2014 build against this, not our\nsource. Versioned independently of the engine.",
+        "operationId": "wire_wire_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Wire Wire Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Wire"
+      }
     }
   }
 }

@@ -175,6 +175,18 @@ shared knowledge base measurably improves. Its central principle:
   the knowledge/evidence/proposal/contribution state, and a per-namespace
   population census so a wired-but-empty subsystem shows up at a glance.
 
+- **M51 (v1.0) — platform integration — in progress.** The SocialFi
+  boundary comes alive. **Event stream:** `allm.events` turns the changes
+  the platform cares about — new proposals, resolutions, confidence
+  shifts — into an ordered append-only feed polled by cursor
+  (`GET /events?since=<seq>`, never miss or replay); the dashboard mirrors
+  it. **Frozen wire format:** [`docs/wire-format.md`](docs/wire-format.md)
+  + [`wire-format.json`](docs/wire-format.json) — a standalone contract
+  (`wire_version` 1.0.0, versioned independently of the engine) that
+  platform teams build against without reading our source, served live at
+  `GET /wire` and drift-guarded in CI. Next: opt-in webhook dispatch, then
+  the live LiveKit workshop loop and a pilot community.
+
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,
   decay prediction + maintenance optimizer, multi-objective KEL, multi-dimensional
   grading (curriculum / alignment / evidence judges), KEL → Researcher remediation

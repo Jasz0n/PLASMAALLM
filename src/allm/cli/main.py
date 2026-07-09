@@ -190,6 +190,22 @@ def _cmd_db_verify(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def _cmd_wire(args: argparse.Namespace) -> int:
+    """Print or export the frozen wire contract (M51)."""
+    import json
+    from pathlib import Path
+
+    from allm.wire import wire_contract
+
+    document = json.dumps(wire_contract(), indent=2, sort_keys=True) + "\n"
+    if args.output:
+        Path(args.output).write_text(document, encoding="utf-8")
+        print(f"wire contract written to {args.output}")
+    else:
+        print(document, end="")
+    return 0
+
+
 def _cmd_dashboard(args: argparse.Namespace) -> int:
     """Export a standalone snapshot of the system dashboard (M50/M51)."""
     from pathlib import Path
@@ -294,6 +310,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="replace an existing target (old file kept as .replaced)",
     )
     p_restore.set_defaults(func=_cmd_db_restore)
+    p_wire = sub.add_parser("wire", help="print/export the frozen wire contract (M51)")
+    p_wire.add_argument("--output", "-o", help="write the contract JSON (default: stdout)")
+    p_wire.set_defaults(func=_cmd_wire)
+
     p_dash = sub.add_parser("dashboard", help="system dashboard state/snapshot (M50)")
     p_dash.add_argument("--db", required=True, help="path to the SQLite store")
     p_dash.add_argument(

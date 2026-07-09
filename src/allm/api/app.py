@@ -103,6 +103,14 @@ def create_app(
     def health() -> dict:
         return {"status": "ok", "version": allm.__version__}
 
+    @app.get("/wire")
+    def wire() -> dict:
+        """The frozen wire contract (M51) — build against this, not our
+        source. Versioned independently of the engine."""
+        from allm.wire import wire_contract
+
+        return wire_contract()
+
     # -- knowledge ------------------------------------------------------
 
     @app.get("/concepts")
