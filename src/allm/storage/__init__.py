@@ -6,7 +6,13 @@ replaces data, it appends a new version. Memory, knowledge graph and
 confidence history (later phases) all build on this guarantee.
 """
 
-from allm.storage.base import Record, RecordStore, storage_backends
+from allm.storage.base import NamespaceStat, Record, RecordStore, storage_backends
 from allm.storage.sqlite import SQLiteRecordStore
 
-__all__ = ["Record", "RecordStore", "SQLiteRecordStore", "storage_backends"]
+__all__ = [
+    "NamespaceStat",
+    "Record",
+    "RecordStore",
+    "SQLiteRecordStore",
+    "storage_backends",
+]

@@ -872,6 +872,50 @@
         "summary": "Get Concept"
       }
     },
+    "/dashboard": {
+      "get": {
+        "operationId": "dashboard_ui_dashboard_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Dashboard Ui",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/dashboard/state": {
+      "get": {
+        "operationId": "dashboard_state_dashboard_state_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Dashboard State Dashboard State Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Dashboard State",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
     "/documents": {
       "post": {
         "operationId": "submit_documents_documents_post",

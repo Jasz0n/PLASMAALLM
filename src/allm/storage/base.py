@@ -34,6 +34,21 @@ class Record:
     created_at: datetime
 
 
+@dataclass(frozen=True)
+class NamespaceStat:
+    """How much a namespace holds — the population census (M50 dashboard).
+
+    A namespace that exists in the schema but reports zero keys is a
+    subsystem that is wired but never exercised: exactly the "something
+    is missing" signal an operator wants at a glance.
+    """
+
+    namespace: str
+    keys: int  # distinct (namespace, key) pairs
+    records: int  # total versions written
+    last_write: datetime | None
+
+
 @runtime_checkable
 class RecordStore(Protocol):
     """Append-only versioned key/value store."""
@@ -54,6 +69,15 @@ class RecordStore(Protocol):
 
     def keys(self, namespace: str) -> list[str]:
         """Return all keys ever written in ``namespace``."""
+        ...
+
+    def namespaces(self) -> list[NamespaceStat]:
+        """Per-namespace population census, busiest first.
+
+        The append-only table read as a group-by: what the system has
+        actually recorded, so a dashboard can show which subsystems are
+        live and which are wired-but-empty without a hand-kept checklist.
+        """
         ...
 
     def audit(

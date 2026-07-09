@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from allm.storage.base import Record, storage_backends
+from allm.storage.base import NamespaceStat, Record, storage_backends
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS records (
@@ -88,6 +88,23 @@ class SQLiteRecordStore:
                 (namespace,),
             ).fetchall()
         return [row[0] for row in rows]
+
+    def namespaces(self) -> list[NamespaceStat]:
+        """Per-namespace census, busiest first — one grouped read."""
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT namespace, COUNT(DISTINCT key), COUNT(*), MAX(created_at)"
+                " FROM records GROUP BY namespace ORDER BY COUNT(*) DESC, namespace ASC"
+            ).fetchall()
+        return [
+            NamespaceStat(
+                namespace=row[0],
+                keys=int(row[1]),
+                records=int(row[2]),
+                last_write=datetime.fromisoformat(row[3]) if row[3] else None,
+            )
+            for row in rows
+        ]
 
     def audit(
         self, namespace: str | None = None, *, limit: int = 100, offset: int = 0

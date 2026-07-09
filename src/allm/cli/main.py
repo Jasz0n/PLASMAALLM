@@ -190,6 +190,27 @@ def _cmd_db_verify(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def _cmd_dashboard(args: argparse.Namespace) -> int:
+    """Export a standalone snapshot of the system dashboard (M50/M51)."""
+    from pathlib import Path
+
+    from allm.api.dashboard import snapshot_html, system_state
+    from allm.storage import SQLiteRecordStore
+
+    store = SQLiteRecordStore(args.db)
+    try:
+        if args.output:
+            Path(args.output).write_text(snapshot_html(store), encoding="utf-8")
+            print(f"dashboard snapshot written to {args.output}")
+        else:
+            import json
+
+            print(json.dumps(system_state(store), indent=2))
+    finally:
+        store.close()
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="allm", description="ALLM research platform CLI")
     parser.add_argument("--log-level", default="INFO", help="logging level (default INFO)")
@@ -273,6 +294,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="replace an existing target (old file kept as .replaced)",
     )
     p_restore.set_defaults(func=_cmd_db_restore)
+    p_dash = sub.add_parser("dashboard", help="system dashboard state/snapshot (M50)")
+    p_dash.add_argument("--db", required=True, help="path to the SQLite store")
+    p_dash.add_argument(
+        "--output", "-o", help="write a standalone HTML snapshot (default: print JSON state)"
+    )
+    p_dash.set_defaults(func=_cmd_dashboard)
+
     p_verify = db_sub.add_parser("verify", help="integrity-check a database")
     p_verify.add_argument("--db", required=True, help="sqlite database path")
     p_verify.set_defaults(func=_cmd_db_verify)

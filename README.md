@@ -162,6 +162,19 @@ shared knowledge base measurably improves. Its central principle:
   pipeline, trialed in a disposable copy, reviewed and merged by a
   human, approval folded back as learning signal.
 
+- **M50 (v0.9) — hardening — done.** Ready for strangers: defense-in-depth
+  execution (bubblewrap namespace isolation + kernel rlimits + timeout +
+  `python -I` + literal binding + a minimal `clean_env()` so no secret is
+  inherited by executed code), an authentication hook point with
+  per-principal rate limiting and input caps, online backup/restore, a
+  published OpenAPI contract, and a written [security review](docs/security-review.md)
+  of the three dangerous paths (which found and fixed a live secret leak).
+  **System dashboard** (`GET /dashboard`, or `allm dashboard --db … -o snapshot.html`
+  for a standalone offline copy): one read-only view of the whole engine —
+  KEL scorecard with per-metric sparklines, live failure-mode findings,
+  the knowledge/evidence/proposal/contribution state, and a per-namespace
+  population census so a wired-but-empty subsystem shows up at a glance.
+
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,
   decay prediction + maintenance optimizer, multi-objective KEL, multi-dimensional
   grading (curriculum / alignment / evidence judges), KEL → Researcher remediation

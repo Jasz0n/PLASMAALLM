@@ -37,6 +37,7 @@ from allm.api.security import (
     TokenVerifier,
     default_verifier,
 )
+from allm.api.dashboard import build_dashboard_router
 from allm.api.teacher_visual import build_teacher_visual_router
 from allm.evidence import EvidenceBinder, EvidenceLedger, EvidencePackage
 from allm.kdp import DocumentStore, GraphInjector, KDPipeline
@@ -87,6 +88,7 @@ def create_app(
 
     app = FastAPI(title="ALLM", version=allm.__version__)
     app.include_router(build_teacher_visual_router(store))
+    app.include_router(build_dashboard_router(store))
 
     def to_package(submission: EvidenceSubmission) -> EvidencePackage:
         data = submission.model_dump()
