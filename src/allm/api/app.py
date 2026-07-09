@@ -30,6 +30,8 @@ from allm.api.schemas import (
     DocumentSubmission,
     EvidenceSubmission,
     ResolveRequest,
+    WebhookApproval,
+    WebhookRegistration,
 )
 from allm.api.security import (
     Principal,
@@ -39,7 +41,7 @@ from allm.api.security import (
 )
 from allm.api.dashboard import build_dashboard_router
 from allm.api.teacher_visual import build_teacher_visual_router
-from allm.events import EventLog
+from allm.events import EventLog, WebhookDispatcher, WebhookRegistry, WebhookSender
 from allm.evidence import EvidenceBinder, EvidenceLedger, EvidencePackage
 from allm.kdp import DocumentStore, GraphInjector, KDPipeline
 from allm.kel import KnowledgeEvaluationLayer
@@ -54,6 +56,7 @@ def create_app(
     *,
     verifier: TokenVerifier | None = None,
     rate_limiter: RateLimiter | None = None,
+    webhook_sender: WebhookSender | None = None,
 ) -> FastAPI:
     """Build the API over one SQLite-backed record store.
 
@@ -68,7 +71,9 @@ def create_app(
     binder = EvidenceBinder(graph, ledger)
     board = ProposalBoard(store, binder)
     documents = DocumentStore(store)
-    events = EventLog(store)
+    webhooks = WebhookRegistry(store)
+    dispatcher = WebhookDispatcher(webhooks, store, sender=webhook_sender)
+    events = EventLog(store, on_emit=dispatcher.dispatch)
     kel = KnowledgeEvaluationLayer(graph, store, KnowledgeState(store), ledger=ledger)
 
     auth = verifier or default_verifier()
@@ -271,6 +276,62 @@ def create_app(
             "cursor": batch[-1].seq if batch else since,
             "total": events.count(),
         }
+
+    # -- webhooks (outbound event delivery, M51) -------------------------
+
+    @app.post("/webhooks", status_code=201)
+    def register_webhook(
+        registration: WebhookRegistration, principal: Principal = Depends(writer)
+    ) -> dict:
+        """Register an endpoint for the event feed. It is *proposed* and
+        delivers nothing until approved — the secret is returned once."""
+        try:
+            subscription = webhooks.register(
+                registration.url,
+                event_types=tuple(registration.event_types),
+                secret=registration.secret,
+            )
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        # the one and only time the secret is exposed
+        return subscription.model_dump(mode="json")
+
+    @app.get("/webhooks")
+    def list_webhooks() -> list[dict]:
+        """Subscriptions with their status — secrets never leave."""
+        return [s.public() for s in webhooks.all()]
+
+    @app.post("/webhooks/{subscription_id}/approve")
+    def approve_webhook(
+        subscription_id: str,
+        approval: WebhookApproval,
+        principal: Principal = Depends(writer),
+    ) -> dict:
+        """The named-human approval gate: only now does it start delivering."""
+        try:
+            approved = webhooks.approve(
+                subscription_id, approver=approval.approver, reason=approval.reason
+            )
+        except KeyError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        return approved.public()
+
+    @app.post("/webhooks/{subscription_id}/disable")
+    def disable_webhook(
+        subscription_id: str, principal: Principal = Depends(writer)
+    ) -> dict:
+        try:
+            disabled = webhooks.disable(subscription_id, reason="disabled via API")
+        except KeyError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        return disabled.public()
+
+    @app.get("/webhooks/deliveries")
+    def webhook_deliveries(
+        limit: int = Query(default=50, ge=1, le=500),
+    ) -> list[dict]:
+        """The outbound audit trail: what was delivered and what failed."""
+        return [d.model_dump(mode="json") for d in dispatcher.recent_deliveries(limit=limit)]
 
     # -- measurement ---------------------------------------------------------------
 

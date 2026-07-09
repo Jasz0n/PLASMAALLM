@@ -184,8 +184,12 @@ shared knowledge base measurably improves. Its central principle:
   + [`wire-format.json`](docs/wire-format.json) — a standalone contract
   (`wire_version` 1.0.0, versioned independently of the engine) that
   platform teams build against without reading our source, served live at
-  `GET /wire` and drift-guarded in CI. Next: opt-in webhook dispatch, then
-  the live LiveKit workshop loop and a pilot community.
+  `GET /wire` and drift-guarded in CI. **Outbound webhooks:** the feed can
+  be *pushed* to platform endpoints — and because that crosses the network,
+  it inherits the core invariant: a subscription delivers **nothing** until
+  a named human approves it (`POST /webhooks` → `/approve`), payloads are
+  HMAC-signed, and every attempt is recorded. Next: the live LiveKit
+  workshop loop and a pilot community.
 
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,
   decay prediction + maintenance optimizer, multi-objective KEL, multi-dimensional

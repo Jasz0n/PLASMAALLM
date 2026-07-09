@@ -28,7 +28,8 @@ from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 
 import allm
-from allm.events import EventLog
+from allm.events import EventLog, WebhookRegistry
+from allm.events.webhooks import DELIVERIES, WebhookDelivery
 from allm.evidence import EvidenceBinder, EvidenceLedger
 from allm.kel import KnowledgeEvaluationLayer
 from allm.knowledge import KnowledgeGraph
@@ -76,6 +77,7 @@ def system_state(store: RecordStore, *, audit_limit: int = 25) -> dict:
             "total": events.count(),
             "recent": [e.model_dump(mode="json") for e in events.latest(limit=12)],
         },
+        "webhooks": _webhooks_view(store),
         "census": [
             {
                 "namespace": s.namespace,
@@ -155,6 +157,26 @@ def _evidence_view(ledger: EvidenceLedger) -> dict:
         "contributors": len({p.contributor for p in packages}),
         "concepts_covered": len({p.concept for p in packages}),
         "replications": sum(1 for p in packages if p.replicates),
+    }
+
+
+def _webhooks_view(store: RecordStore) -> dict:
+    subscriptions = WebhookRegistry(store).all()
+    keys = store.keys(DELIVERIES)
+    recent = [
+        WebhookDelivery.model_validate(store.get(DELIVERIES, key).value)
+        for key in keys[-20:]
+    ]
+    return {
+        "subscriptions_total": len(subscriptions),
+        "by_status": dict(Counter(s.status for s in subscriptions)),
+        "deliveries_total": len(keys),
+        "recent_failures": sum(1 for d in recent if not d.ok),
+        "recent": [
+            {"event_type": d.event_type, "ok": d.ok, "status_code": d.status_code,
+             "subscription_id": d.subscription_id}
+            for d in reversed(recent[-8:])
+        ],
     }
 
 
@@ -431,6 +453,23 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         `<div class="scroll"><table>
            <tr><th class="num">seq</th><th>type</th><th>subject</th><th>data</th></tr>
            ${evRows || `<tr><td colspan="4" class="muted">no events yet</td></tr>`}
+         </table></div>`));
+
+      // Webhooks (M51 outbound delivery)
+      const w = s.webhooks;
+      const whRows = w.recent.map(d =>
+        `<tr><td><span class="dot" style="background:${d.ok ? "var(--good)" : "var(--bad)"}"></span>${d.ok ? "delivered" : "failed"}</td><td>${d.event_type}</td><td class="num">${d.status_code}</td><td class="muted">${d.subscription_id}</td></tr>`).join("");
+      html.push(panel("Outbound Webhooks",
+        "opt-in delivery of the event feed — nothing sent until a human approves a subscription",
+        `<div class="stat-row">
+           <div class="stat"><div class="n">${w.subscriptions_total}</div><div class="k">subscriptions</div></div>
+           <div class="stat"><div class="n">${w.deliveries_total}</div><div class="k">deliveries</div></div>
+           <div class="stat"><div class="n">${w.recent_failures}</div><div class="k">recent failures</div></div>
+         </div>
+         <div class="sub">subscriptions by status</div>${chips(w.by_status)}
+         <div class="scroll" style="margin-top:0.7rem"><table>
+           <tr><th>result</th><th>event</th><th class="num">code</th><th>subscription</th></tr>
+           ${whRows || `<tr><td colspan="4" class="muted">no deliveries yet</td></tr>`}
          </table></div>`));
 
       // Audit

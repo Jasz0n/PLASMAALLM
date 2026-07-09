@@ -73,6 +73,26 @@ class ConceptSummary(BaseModel):
     evidence_count: int
 
 
+class WebhookRegistration(BaseModel):
+    """POST /webhooks — register an endpoint for the event feed (M51).
+
+    It is *proposed*: it receives nothing until a human approves it.
+    ``event_types`` empty means every event. Supply a ``secret`` to pin
+    your own HMAC key, or one is generated and returned once.
+    """
+
+    url: str = Field(min_length=1, max_length=2_000)
+    event_types: list[str] = Field(default_factory=list, max_length=32)
+    secret: str | None = Field(default=None, min_length=16, max_length=200)
+
+
+class WebhookApproval(BaseModel):
+    """POST /webhooks/{id}/approve — the named-human approval record."""
+
+    approver: str = Field(min_length=1, max_length=200)
+    reason: str = Field(min_length=1, max_length=500)
+
+
 class VisualBriefSummary(BaseModel):
     """Teacher list view for one distilled visual brief."""
 

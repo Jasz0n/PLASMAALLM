@@ -59,6 +59,35 @@ reject on.
   you will never miss or replay one. Types today: `evidence.submitted`,
   `confidence.changed`, `proposal.opened`, `proposal.resolved`.
 
+## Receiving webhooks
+
+Instead of polling `GET /events`, a platform can register an endpoint to
+have the feed **pushed** to it. Delivery is opt-in and approval-gated:
+`POST /webhooks` registers a *proposed* subscription (returning a
+`secret` **once** — store it), and it delivers nothing until a named
+human calls `POST /webhooks/{id}/approve`. Every attempt is recorded and
+readable at `GET /webhooks/deliveries`.
+
+Each delivery is a `POST` to your URL with this body:
+
+```json
+{ "wire_version": "1.0.0", "event": { "seq": 42, "type": "confidence.changed", "subject": "plasma", "data": {"value": 0.81}, "created_at": "…" } }
+```
+
+and these headers:
+
+| Header | Meaning |
+|---|---|
+| `X-ALLM-Event` | the event `type` |
+| `X-ALLM-Event-Seq` | the monotonic `seq` (dedupe / order on this) |
+| `X-ALLM-Signature` | `sha256=` + HMAC-SHA256 of the **raw body** keyed by your `secret` |
+
+**Verify every delivery**: recompute the HMAC over the exact bytes you
+received and constant-time-compare it to `X-ALLM-Signature`. Return any
+`2xx` to acknowledge; a non-2xx or a timeout is recorded as a failed
+delivery. Treat delivery as at-least-once and possibly out-of-order —
+`seq` is your dedupe and ordering key.
+
 ## What stays outside the contract, on purpose
 
 Identity, rewards and file storage are the platform's. The core sees

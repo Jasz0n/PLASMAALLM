@@ -690,6 +690,66 @@
         ],
         "title": "VisualReviewSummary",
         "type": "object"
+      },
+      "WebhookApproval": {
+        "description": "POST /webhooks/{id}/approve \u2014 the named-human approval record.",
+        "properties": {
+          "approver": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Approver",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approver",
+          "reason"
+        ],
+        "title": "WebhookApproval",
+        "type": "object"
+      },
+      "WebhookRegistration": {
+        "description": "POST /webhooks \u2014 register an endpoint for the event feed (M51).\n\nIt is *proposed*: it receives nothing until a human approves it.\n``event_types`` empty means every event. Supply a ``secret`` to pin\nyour own HMAC key, or one is generated and returned once.",
+        "properties": {
+          "event_types": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 32,
+            "title": "Event Types",
+            "type": "array"
+          },
+          "secret": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 16,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret"
+          },
+          "url": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "WebhookRegistration",
+        "type": "object"
       }
     }
   },
@@ -1531,6 +1591,210 @@
         "tags": [
           "teacher"
         ]
+      }
+    },
+    "/webhooks": {
+      "get": {
+        "description": "Subscriptions with their status \u2014 secrets never leave.",
+        "operationId": "list_webhooks_webhooks_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response List Webhooks Webhooks Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Webhooks"
+      },
+      "post": {
+        "description": "Register an endpoint for the event feed. It is *proposed* and\ndelivers nothing until approved \u2014 the secret is returned once.",
+        "operationId": "register_webhook_webhooks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookRegistration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Register Webhook Webhooks Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register Webhook"
+      }
+    },
+    "/webhooks/deliveries": {
+      "get": {
+        "description": "The outbound audit trail: what was delivered and what failed.",
+        "operationId": "webhook_deliveries_webhooks_deliveries_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Webhook Deliveries Webhooks Deliveries Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Webhook Deliveries"
+      }
+    },
+    "/webhooks/{subscription_id}/approve": {
+      "post": {
+        "description": "The named-human approval gate: only now does it start delivering.",
+        "operationId": "approve_webhook_webhooks__subscription_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subscription_id",
+            "required": true,
+            "schema": {
+              "title": "Subscription Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookApproval"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Approve Webhook Webhooks  Subscription Id  Approve Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Webhook"
+      }
+    },
+    "/webhooks/{subscription_id}/disable": {
+      "post": {
+        "operationId": "disable_webhook_webhooks__subscription_id__disable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subscription_id",
+            "required": true,
+            "schema": {
+              "title": "Subscription Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Disable Webhook Webhooks  Subscription Id  Disable Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Disable Webhook"
       }
     },
     "/wire": {

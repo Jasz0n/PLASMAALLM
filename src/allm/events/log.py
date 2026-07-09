@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import threading
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -40,12 +40,20 @@ class Event(BaseModel):
 class EventLog:
     """Append-only, ordered stream of domain events over one store."""
 
-    def __init__(self, store: RecordStore) -> None:
+    def __init__(
+        self, store: RecordStore, *, on_emit: Callable[[Event], Any] | None = None
+    ) -> None:
         self._store = store
         self._lock = threading.Lock()
+        self._on_emit = on_emit
 
     def emit(self, type: str, subject: str, data: dict[str, Any] | None = None) -> Event:
-        """Append one event and return it with its assigned ``seq``."""
+        """Append one event and return it with its assigned ``seq``.
+
+        An ``on_emit`` hook (e.g. webhook dispatch) fires *after* the
+        write and *outside* the lock, so slow delivery never serialises
+        emits, and a failing subscriber can never break the core write.
+        """
         with self._lock:
             seq = len(self._store.keys(NAMESPACE)) + 1
             event = Event(
@@ -62,6 +70,11 @@ class EventLog:
                 reason=f"{type}: {subject}",
             )
         logger.info("event #%d %s %s", seq, type, subject)
+        if self._on_emit is not None:
+            try:
+                self._on_emit(event)
+            except Exception:  # a subscriber must never break a core write
+                logger.exception("on_emit hook failed for event #%d", seq)
         return event
 
     def since(self, cursor: int = 0, *, limit: int = 100) -> list[Event]:

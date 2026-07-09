@@ -8,5 +8,24 @@ store, so the feed is not a side-channel that can drift: it *is* data.
 """
 
 from allm.events.log import Event, EventLog
+from allm.events.webhooks import (
+    ApprovalError,
+    UrllibSender,
+    WebhookDelivery,
+    WebhookDispatcher,
+    WebhookRegistry,
+    WebhookSender,
+    WebhookSubscription,
+)
 
-__all__ = ["Event", "EventLog"]
+__all__ = [
+    "ApprovalError",
+    "Event",
+    "EventLog",
+    "UrllibSender",
+    "WebhookDelivery",
+    "WebhookDispatcher",
+    "WebhookRegistry",
+    "WebhookSender",
+    "WebhookSubscription",
+]
