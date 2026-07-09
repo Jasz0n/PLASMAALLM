@@ -18,10 +18,17 @@ Requires the api extras: pip install -e ".[api]"
 
 from __future__ import annotations
 
+import asyncio
+import json
 import os
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, StreamingResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import allm
 from allm.api.schemas import (
@@ -51,12 +58,28 @@ from allm.storage import SQLiteRecordStore
 from allm.teacher import KnowledgeState
 
 
+# SSE tail poll interval — the store is poll-based, so a live stream checks
+# for new events this often when idle. Only affects ``live=true`` streams.
+_SSE_POLL_SECONDS = float(os.environ.get("ALLM_SSE_POLL_SECONDS", "1.0"))
+
+
+def _cors_from_env() -> list[str]:
+    """Allowed browser origins from ``ALLM_API_CORS_ORIGINS`` (comma-sep).
+
+    Empty by default — same-origin only, so a fresh deploy is not
+    accidentally reachable from any site. ``*`` allows all (dev only).
+    """
+    raw = os.environ.get("ALLM_API_CORS_ORIGINS", "").strip()
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+
 def create_app(
     db_path: Path | str,
     *,
     verifier: TokenVerifier | None = None,
     rate_limiter: RateLimiter | None = None,
     webhook_sender: WebhookSender | None = None,
+    cors_origins: list[str] | None = None,
 ) -> FastAPI:
     """Build the API over one SQLite-backed record store.
 
@@ -94,6 +117,52 @@ def create_app(
         return principal
 
     app = FastAPI(title="ALLM", version=allm.__version__)
+
+    # -- browser-ready boundary (M52) -----------------------------------
+    origins = cors_origins if cors_origins is not None else _cors_from_env()
+    if origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_methods=["GET", "POST"],
+            allow_headers=["Authorization", "Content-Type", "Last-Event-ID"],
+            # bearer tokens ride the Authorization header, not cookies, so
+            # credentialed CORS is unnecessary — and keeping it off lets a
+            # wildcard origin stay valid for open reads.
+            allow_credentials=False,
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def _http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        """One predictable error shape for clients (M52).
+
+        Keeps FastAPI's ``detail`` for anyone already reading it, and adds
+        a structured ``error`` object a frontend can switch on.
+        """
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": {"status": exc.status_code, "message": exc.detail, "type": "http_error"},
+                "detail": exc.detail,
+            },
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def _validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+        fields = jsonable_encoder(exc.errors())
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": {
+                    "status": 422,
+                    "message": "request validation failed",
+                    "type": "validation_error",
+                    "fields": fields,
+                },
+                "detail": fields,
+            },
+        )
+
     app.include_router(build_teacher_visual_router(store))
     app.include_router(build_dashboard_router(store))
 
@@ -291,6 +360,44 @@ def create_app(
             "cursor": batch[-1].seq if batch else since,
             "total": events.count(),
         }
+
+    @app.get("/events/stream")
+    async def event_sse(
+        request: Request,
+        since: int = Query(default=0, ge=0),
+        live: bool = Query(default=True),
+    ) -> StreamingResponse:
+        """The live feed as Server-Sent Events — for a browser client.
+
+        Resumes from the ``Last-Event-ID`` header (the browser sends it on
+        reconnect) or ``?since=<seq>``, over the same monotonic ``seq``,
+        so nothing is missed or replayed. ``live=false`` streams the
+        current backlog and closes (handy for a simple catch-up client).
+        """
+        header_id = request.headers.get("Last-Event-ID")
+        cursor = int(header_id) if header_id and header_id.isdigit() else since
+
+        async def generate():
+            nonlocal cursor
+            yield "retry: 3000\n\n"  # tell the browser how fast to reconnect
+            while True:
+                batch = events.since(cursor, limit=200)
+                if batch:
+                    for event in batch:
+                        cursor = event.seq
+                        data = json.dumps(event.model_dump(mode="json"))
+                        yield f"id: {event.seq}\nevent: {event.type}\ndata: {data}\n\n"
+                    continue
+                if not live or await request.is_disconnected():
+                    break
+                yield ": keepalive\n\n"  # comment frame keeps idle proxies open
+                await asyncio.sleep(_SSE_POLL_SECONDS)
+
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     # -- webhooks (outbound event delivery, M51) -------------------------
 

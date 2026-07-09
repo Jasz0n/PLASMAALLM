@@ -18,7 +18,8 @@ services:
       ALLM_STORAGE__PATH: /data/allm.sqlite3
       ALLM_API_RATE_LIMIT: ${ALLM_API_RATE_LIMIT:-60/60}
       ALLM_LOGGING__LEVEL: ${ALLM_LOG_LEVEL:-INFO}
-      # CORS for a browser client arrives in the next M52 slice.
+      # Browser origins allowed cross-site (comma-separated). Empty = same-origin only.
+      ALLM_API_CORS_ORIGINS: ${ALLM_API_CORS_ORIGINS:-}
     volumes:
       - allm-data:/data
     restart: unless-stopped

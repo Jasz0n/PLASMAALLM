@@ -194,8 +194,19 @@ shared knowledge base measurably improves. Its central principle:
   each synced-evidence batch → KDP → concepts, conflicts opened as
   proposals, every tick a `workshop.observed` event — so live workshops
   feed the same evidence machinery as documents and practice
-  (`examples/80`). Next: a sustained run against a real stream, and a
-  pilot community.
+  (`examples/80`). *M51 complete for everything buildable without real
+  users; the pilot folds into M52.*
+
+- **M52 (v1.0 → live) — make it real — in progress.** Turning the engine
+  into something others can run. **Deployable core:** a `Dockerfile` +
+  `docker compose up` (auth on by default, store on a persistent volume,
+  opt-in scheduled backups) and a `/ready` readiness probe distinct from
+  `/health` — [`docs/deploy.md`](docs/deploy.md). **Browser-ready
+  boundary:** configurable CORS, a **Server-Sent Events** feed
+  (`GET /events/stream`, auto-resuming over `seq`) so a web client gets
+  live updates without polling, and a consistent JSON error envelope.
+  Next: a typed client + "build a client" guide, a seeded demo scenario,
+  and the pilot.
 
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,
   decay prediction + maintenance optimizer, multi-objective KEL, multi-dimensional

@@ -55,6 +55,10 @@ reject on.
   cannot move belief** — only independent replication does.
 - **`ConceptSummary`** — the list-view shape from `GET /concepts`.
 - **`Event`** — one entry of the live feed (`GET /events?since=<seq>`).
+  Read it three ways, same `seq` semantics throughout: poll
+  `GET /events?since=<seq>`, subscribe to the **Server-Sent Events**
+  stream `GET /events/stream` (a browser `EventSource` that auto-resumes
+  from `Last-Event-ID`), or register a webhook (below).
   Each carries a monotonic `seq`; poll with the last `seq` you saw and
   you will never miss or replay one. Types today: `evidence.submitted`,
   `confidence.changed`, `proposal.opened`, `proposal.resolved`,

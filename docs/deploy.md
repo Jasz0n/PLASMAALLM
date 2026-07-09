@@ -43,8 +43,23 @@ Compose gates the container's health on `/ready`.
 | `ALLM_API_TOKEN` | *(required)* | Bearer token for every write. Rotate by changing it and restarting. |
 | `ALLM_STORAGE__PATH` | `/data/allm.sqlite3` | Store location (on the volume). |
 | `ALLM_API_RATE_LIMIT` | `60/60` | Per-principal token bucket (`requests/seconds`). |
+| `ALLM_API_CORS_ORIGINS` | *(none)* | Comma-separated browser origins allowed cross-site (e.g. `https://app.example`). Empty = same-origin only. `*` = any (dev). |
 | `ALLM_PORT` | `8000` | Host port to publish. |
 | `ALLM_LOG_LEVEL` | `INFO` | Log level. |
+
+### A browser client
+
+Set `ALLM_API_CORS_ORIGINS` to your frontend's origin(s) so it can call
+the API cross-site. For live updates, subscribe to the **Server-Sent
+Events** feed instead of polling:
+
+```js
+const es = new EventSource("https://api.example/events/stream");
+es.addEventListener("confidence.changed", (e) => update(JSON.parse(e.data)));
+// the browser auto-reconnects and resends Last-Event-ID, so no event is missed
+```
+
+Reads and the SSE stream are open; only writes need the bearer token.
 
 Reads (`/concepts`, `/events`, `/dashboard`, `/wire`, `/audit`) are open
 by design; every write requires the bearer token and is rate-limited.
@@ -87,8 +102,7 @@ uvicorn --factory allm.api.app:create_default_app --host 0.0.0.0 --port 8000
 - **Rate limiting is per-instance** (in-process). Behind more than one
   replica, add a shared limiter or sticky routing — see
   [`security-review.md`](security-review.md).
-- **CORS for a browser client** lands in the next M52 slice
-  (`ALLM_API_CORS_ORIGINS`); until then a same-origin proxy is the way to
-  serve a web UI.
+- **CORS is off by default** — set `ALLM_API_CORS_ORIGINS` to your
+  frontend's exact origin(s) rather than `*` in production.
 - The full trust model — what each endpoint defends and the operator
   setup for strangers — is in [`security-review.md`](security-review.md).
