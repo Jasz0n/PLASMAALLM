@@ -35,6 +35,26 @@ def test_established_claim_is_answered_with_its_evidence(seeded) -> None:
     assert a.sources and a.provenance  # traceable
 
 
+def test_how_to_returns_the_reproduced_procedure_not_the_definition(seeded) -> None:
+    graph, ledger, board, binder = seeded
+    a = answer_question("how do I make a nano coating?", graph, ledger, board, binder=binder)
+    assert a.intent == "how_to" and a.status == "procedure"
+    assert a.steps and any("caustic" in s.lower() for s in a.steps)  # the actual steps
+    assert "how to make" in a.answer.lower() and "reproduced" in a.answer
+    # a quantity question about the same concept is answered differently
+    q = answer_question("how long does the nano coating take?", graph, ledger, board, binder=binder)
+    assert q.intent == "quantity" and "12 hours" in q.answer and not q.steps
+
+
+def test_how_to_without_steps_refuses_to_invent_them(seeded) -> None:
+    graph, ledger, board, binder = seeded
+    # Plasma has evidence but no reproduction steps
+    a = answer_question("how do I make plasma?", graph, ledger, board, binder=binder)
+    assert a.intent == "how_to" and a.status == "no_procedure"
+    assert not a.steps and "won't invent" in a.answer
+    assert a.suggestion
+
+
 def test_a_document_only_claim_is_flagged_unfounded(seeded) -> None:
     graph, ledger, board, binder = seeded
     # "A Gans" came from a document but has no evidence packages

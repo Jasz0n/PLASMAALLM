@@ -93,15 +93,25 @@ def seed_public_loop(store: RecordStore) -> SeedReport:
     board.claim(proposal.id, "ada")
 
     # 4. Independent replications settle it — the only thing that moves belief.
+    #    Their reproduction steps ARE the how-to: a procedure is grounded when
+    #    several people reproduced it, not when someone asserts it.
+    steps = (
+        "Degrease and lightly sand a metal (e.g. copper) plate",
+        "Submerge the plate in a caustic (NaOH) bath",
+        "Apply a low DC voltage across the plate",
+        "Leave it 12 hours until a dark nano layer forms",
+        "Rinse in clean water and let it dry",
+    )
     first = EvidencePackage.build(
         claim="nano coating fully formed at 12 hours, measured", concept=contested,
         contributor="ada", kind="experiment", outcome="supported", measurements={"hours": 12},
+        reproduction_steps=steps,
     )
     replications = [
         EvidencePackage.build(
             claim=f"reproduced: coating complete at 12 hours (run {i})", concept=contested,
             contributor=who, kind="replication", outcome="supported",
-            replicates=first.id, measurements={"hours": 12},
+            replicates=first.id, measurements={"hours": 12}, reproduction_steps=steps,
         )
         for i, who in enumerate(("ben", "cara"), start=1)
     ]

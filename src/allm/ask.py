@@ -43,17 +43,44 @@ class GroundedAnswer(BaseModel):
 
     query: str
     found: bool
-    status: str  # established | emerging | contested | unfounded | unknown
+    intent: str  # how_to | quantity | definition
+    status: str  # established | emerging | contested | unfounded | procedure | no_procedure | unknown
     answer: str
     concept: str | None = None
     confidence: float | None = None
     contributors: int = 0
     independent_replications: int = 0
+    steps: tuple[str, ...] = ()  # the reproducible procedure, for how-to questions
     provenance: str | None = None
     sources: tuple[str, ...] = ()  # evidence package ids behind the number
     related: tuple[str, ...] = ()
     open_questions: tuple[str, ...] = ()  # unresolved proposals on this concept
     suggestion: str | None = None  # how to contribute, when evidence is thin
+
+
+_QUANTITY = ("how long", "how much", "how many", "how hot", "how fast", "what temperature")
+_HOW_TO = ("how do i", "how to", "how can i", "how would i", "how is it made",
+           " make ", " build ", " create ", " prepare ", " produce ", " grow ",
+           "steps", "recipe", "procedure", "instructions")
+
+
+def _intent(query: str) -> str:
+    """What kind of answer the question is asking for."""
+    q = f" {query.lower().strip()} "
+    if any(p in q for p in _QUANTITY):
+        return "quantity"
+    if any(p in q for p in _HOW_TO) or q.lstrip().startswith(("make ", "build ", "create ")):
+        return "how_to"
+    return "definition"
+
+
+def _procedure_steps(packages) -> tuple[str, ...]:
+    """The richest reproducible procedure across a concept's evidence."""
+    best: tuple[str, ...] = ()
+    for package in packages:
+        if len(package.reproduction_steps) > len(best):
+            best = tuple(package.reproduction_steps)
+    return best
 
 
 def _content_tokens(text: str) -> set[str]:
@@ -69,6 +96,7 @@ def answer_question(
     binder: EvidenceBinder | None = None,
 ) -> GroundedAnswer:
     """Answer ``query`` strictly from the evidence graph."""
+    intent = _intent(query)
     q_tokens = _content_tokens(query)
     concept = _best_match(query, q_tokens, graph, ledger) if q_tokens else None
 
@@ -76,6 +104,7 @@ def answer_question(
         return GroundedAnswer(
             query=query,
             found=False,
+            intent=intent,
             status="unknown",
             answer=(
                 "I don't have evidence about that yet — nothing in the knowledge "
@@ -96,19 +125,22 @@ def answer_question(
         p.question for p in proposals if p.status in ("open", "claimed")
     )
     provenance = binder.why(concept.name) if binder is not None else None
+    steps = _procedure_steps(packages) if intent == "how_to" else ()
 
     status, answer, suggestion = _compose(
-        concept, value, breakdown, packages, open_questions
+        concept, intent, value, breakdown, packages, open_questions, steps
     )
     return GroundedAnswer(
         query=query,
         found=True,
+        intent=intent,
         status=status,
         answer=answer,
         concept=concept.name,
         confidence=round(value, 4),
         contributors=breakdown.contributors if breakdown else 0,
         independent_replications=breakdown.independent_replications if breakdown else 0,
+        steps=steps,
         provenance=provenance,
         sources=breakdown.packages if breakdown else (),
         related=concept.related,
@@ -135,15 +167,34 @@ def _best_match(query: str, q_tokens: set[str], graph: KnowledgeGraph, ledger: E
     return best  # score 0 -> None (no shared content word = no honest match)
 
 
-def _compose(concept, value, breakdown, packages, open_questions):
+def _compose(concept, intent, value, breakdown, packages, open_questions, steps):
     """The grounded sentence + status + optional contribution nudge."""
     what = concept.description.strip() or f"{concept.name}"
+    name = concept.name.lower()
     conf = f"confidence {value:.2f}"
     who = (
         f"{breakdown.contributors} contributor(s), "
         f"{breakdown.independent_replications} independent replication(s)"
         if breakdown else "no submitted evidence"
     )
+
+    # A how-to is answered by the reproducible procedure behind the evidence —
+    # not by the definition. If no steps were submitted, say so honestly.
+    if intent == "how_to":
+        if steps:
+            return (
+                "procedure",
+                f"Here's how to make {name} — a procedure reproduced by {who} ({conf}):",
+                None,
+            )
+        return (
+            "no_procedure",
+            f"No reproducible procedure for {name} has been submitted — I only have "
+            f"what it *is*: {what}. I won't invent the steps. Contribute them as an "
+            f"evidence package's reproduction steps and they'll earn confidence "
+            f"through replication.",
+            "Record the how-to as an evidence package with reproduction steps.",
+        )
 
     if open_questions:
         return (

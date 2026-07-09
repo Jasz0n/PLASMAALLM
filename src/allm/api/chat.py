@@ -54,11 +54,13 @@ CHAT_HTML = """<!DOCTYPE html>
     .badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.55rem; align-items: center; }
     .badge { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
       padding: 0.12rem 0.5rem; border-radius: 20px; border: 1px solid var(--line); }
-    .badge.established { color: var(--good); border-color: var(--good); }
+    .badge.established, .badge.procedure { color: var(--good); border-color: var(--good); }
     .badge.emerging { color: var(--accent); border-color: var(--accent); }
-    .badge.contested { color: var(--warn); border-color: var(--warn); }
+    .badge.contested, .badge.no_procedure { color: var(--warn); border-color: var(--warn); }
     .badge.unfounded { color: var(--bad); border-color: var(--bad); }
     .badge.unknown { color: var(--muted); }
+    ol.steps { margin: 0.55rem 0 0; padding-left: 1.3rem; line-height: 1.5; }
+    ol.steps li { margin: 0.2rem 0; }
     .meta { font-size: 0.75rem; color: var(--muted); }
     details { margin-top: 0.5rem; }
     summary { cursor: pointer; font-size: 0.75rem; color: var(--accent); }
@@ -105,7 +107,9 @@ CHAT_HTML = """<!DOCTYPE html>
 
     function addAnswer(a) {
       const parts = [`<div class="answer">${esc(a.answer)}</div>`];
-      const badges = [`<span class="badge ${a.status}">${a.status}</span>`];
+      if (a.steps && a.steps.length)
+        parts.push(`<ol class="steps">${a.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>`);
+      const badges = [`<span class="badge ${a.status}">${(a.status || "").replace("_", " ")}</span>`];
       if (a.confidence != null) badges.push(
         `<span class="meta">confidence ${a.confidence.toFixed(2)} · ` +
         `${a.contributors} contributor(s) · ${a.independent_replications} replication(s)</span>`);

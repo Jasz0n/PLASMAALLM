@@ -109,20 +109,29 @@ as open and ignore any you don't handle.
 ## Ask ALLM — grounded answers
 
 `GET /ask?q=…` (open) returns an answer built **only** from the evidence
-graph — never a generative guess:
+graph — never a generative guess. It is **intent-aware**: a *how-to*
+question is answered by the reproducible procedure behind the evidence,
+not the definition.
 
 ```json
-{ "found": true, "status": "established", "concept": "The Nano Coating",
-  "answer": "The nano coating is a dark layer that forms after 12 hours… The evidence supports this — confidence 0.79 from 3 contributor(s), 2 independent replication(s).",
+{ "found": true, "intent": "how_to", "status": "procedure", "concept": "The Nano Coating",
+  "answer": "Here's how to make the nano coating — a procedure reproduced by 3 contributor(s), 2 independent replication(s) (confidence 0.79):",
+  "steps": ["Degrease and lightly sand a metal plate", "Submerge it in a caustic (NaOH) bath", "Apply a low DC voltage", "Leave it 12 hours until a dark nano layer forms", "Rinse and dry"],
   "confidence": 0.79, "contributors": 3, "independent_replications": 2,
-  "provenance": "…", "sources": ["pkg_…"], "open_questions": [], "suggestion": null }
+  "provenance": "…", "sources": ["pkg_…"] }
 ```
 
-`status` is one of `established` · `emerging` · `contested` · `unfounded`
-· `unknown`. When nothing matches, `found` is `false` and the answer says
-so — render that honestly (it's the product's whole point), and use
-`status` to colour the confidence. `AllmClient.ask("…")` wraps it; the
-reference chat UI is served at `/chat`.
+- `intent`: `how_to` · `quantity` · `definition`.
+- `status`: `established` · `emerging` · `contested` · `unfounded` ·
+  `procedure` (how-to with steps) · `no_procedure` (how-to, none
+  submitted — it won't invent them) · `unknown` (nothing matched).
+- `steps`: the reproducible procedure, present for answered how-to
+  questions — render it as an ordered list.
+
+When nothing matches, `found` is `false` and the answer says so — render
+that honestly (it's the product's whole point), and use `status` to
+colour the confidence. `AllmClient.ask("…")` wraps it; the reference chat
+UI is served at `/chat`.
 
 ## What the client never sees
 
