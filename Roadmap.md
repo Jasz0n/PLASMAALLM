@@ -57,6 +57,19 @@ defined the last one):
 states exit criteria in the system's own metrics. Anything that can't
 is underspecified.
 
+> **Update (2026-07-09) — the frontier moved.** M47–M51 are done: the
+> loop drift is fixed, the Practice Engine proved the second way of
+> learning, the open-source apprentice merged a real PR, M50 hardened the
+> system for strangers (sandboxing, auth, security review, dashboard), and
+> M51 built the whole platform boundary (event stream, frozen wire
+> contract, approval-gated webhooks, live workshop loop). 632 offline
+> tests, published, CI green. Every *engine-capability* gap above is
+> closed. The one that isn't — **gap 4, "nobody else can run this yet"** —
+> is now the whole game: the system has never been deployed, consumed by a
+> client, or touched by a contributor who isn't us. That is what **M52 —
+> Make it real** below exists to close, aimed squarely at the
+> frontend/client already being built.
+
 ---
 
 ## The thesis of this roadmap: the second way of learning
@@ -269,11 +282,54 @@ platform, so it closes M51.
 **Exit criterion** — unchanged, it was right the first time: one real
 contested claim goes through the full public loop — discussion → KDP →
 conflict → proposal → independent replications → confidence shift —
-with every step inspectable.
+with every step inspectable. *(This criterion now lives in M52: it needs
+a deployment and a client, which M52 builds. Everything buildable in M51
+without real users is done.)*
 
 ---
 
-## M52+ — Scale and lifelong operation (v1.x)
+## M52 — Make it real (v1.0 → live): deployed, consumed, piloted
+
+*Chosen 2026-07-09 as the next chapter (see the "frontier moved" update
+above). Nothing here adds engine capability — M47–M51 finished that. The
+risk has shifted from "missing feature" to "never met reality": never
+deployed, never consumed by a client, never touched by a contributor who
+isn't us. M52 closes that gap, sequenced to unblock the frontend/client
+already being built as early as possible.*
+
+| Deliverable | Notes |
+|---|---|
+| **Deployable core** | A container image + one `docker compose up`: `create_default_app` honouring env config, **auth on by default**, the SQLite store on a persistent volume with scheduled `allm db backup`, a readiness probe distinct from `/health`. From clone to a running, authenticated API whose data survives a restart, in one documented command. Runbook in `docs/deploy.md` |
+| **Browser-ready boundary** | What a real web client needs and we don't have yet: configurable **CORS** (`ALLM_API_CORS_ORIGINS`); a realtime feed transport so the frontend stops polling — **Server-Sent Events** at `GET /events/stream`, resuming from `Last-Event-ID`/`since` over the same monotonic `seq` (no new deps; one-way is exactly right for a feed); a consistent JSON error envelope. Exit: a browser client on another origin authenticates, reads a concept with provenance, submits evidence, and sees the resulting `confidence.changed` arrive **live** |
+| **Integration kit** | A small typed client (`allm.client`) aligned to the frozen wire contract, a "build a client" guide (auth, endpoints, wire types, SSE) for the frontend team, and one runnable end-to-end example driving the whole contributor loop over HTTP. Exit: a frontend dev is productive from the guide + client **without reading engine source** |
+| **Seed & demo scenario** | `allm seed` populates a fresh store with a reproducible starter corpus and a scripted **public-loop** scenario — discussion → KDP → conflict → proposal → independent replication → confidence shift — so a fresh deploy is non-empty and the dashboard shows a live, healthy system. Doubles as the pilot rehearsal; runs in CI |
+| **SocialServer live wiring** | The M51 open item: point `WorkshopLoop` + stream discovery at a real SocialServer/LiveKit instance behind config, fixture fallback preserved. Exit: with creds, ALLM observes a real room and folds it into the graph; without them the fixture path is unchanged |
+| **Pilot** | One narrow domain, real contributors. **The exit criterion.** Measured in the system's own metrics: conflict-resolution efficiency (CRE), evidence growth rate (EGR) and proposal throughput over the run |
+
+**Sequencing.** *Deployable core → browser-ready boundary → integration
+kit* is the critical path — it unblocks the frontend team fastest and is
+fully buildable offline **now**. *Seed & demo* runs alongside and
+de-risks the pilot. *SocialServer wiring* and *Pilot* need external
+reality (a live daemon, real people) and close the chapter.
+
+**Exit criterion** — the same one, now reachable: **one real contested
+claim goes through the full public loop** — discussion → KDP → conflict →
+proposal → independent replications → confidence shift — **deployed,
+driven by a real client, every step inspectable** on the dashboard and
+the live feed.
+
+**Standing rule for this chapter:** the published **wire contract and
+event feed are the product surface.** A frontend depends on them;
+breaking either is a major-version act (`wire_version`), never a silent
+change.
+
+---
+
+## M53 — Scale and lifelong operation (v1.x)
+
+*Renumbered from the old M52+. Deliberately **after** the pilot: scale,
+federation and open collection only earn their place once the provenance
+and confidence machinery has survived real use.*
 
 Not yet fully specified — deliberately. What we already know belongs here:
 
@@ -288,7 +344,7 @@ Not yet fully specified — deliberately. What we already know belongs here:
   above 7B; multi-node when a single machine stops being the bottleneck.
 - **Federation and open collection:** other ALLM instances and curated
   open-web sources — only after the provenance and confidence machinery
-  has survived a public pilot (M51).
+  has survived a public pilot (M52).
 
 ---
 
@@ -308,17 +364,23 @@ Not yet fully specified — deliberately. What we already know belongs here:
 ## Sequencing and parallelism
 
 ```
-M47 ──► M48 ──► M49 ──► M51 ──► M52+
-         │               ▲
-         └── (practice    │
-              proves      │
-              thesis)     │
-        M50 runs alongside M48/M49, must land before M51
+M47 ─► M48 ─► M49 ─► M51 ─► M52 ─► M53
+   done  done  done  done  ▲ now
+         │                 │
+         └─ (practice   M50 (done) runs alongside M48/M49
+             proves      and hardened the system for M52
+             thesis)
 ```
 
-M47 is a short, blocking cleanup — nothing ships on a red suite. M48 is
-the critical path: it proves the second way of learning and gives M49
-its engine. M50 can start any time (and its sandbox work is a direct
-prerequisite for taking M48/M49 public). M51 waits for both, exactly as
-platform integration waited last time — the core must work as expected
-first.
+M47–M51 are done. **M52 is the live critical path**: deployable core →
+browser-ready boundary → integration kit unblocks the frontend that's
+being built, then a seeded demo rehearses the pilot, and the pilot —
+needing real people and a live platform — is the exit criterion. M53
+(scale, federation) waits for the pilot on purpose: robustness and reach
+are only worth building once real use has stress-tested the provenance
+and confidence machinery.
+
+**Within M52, start here:** the *deployable core* — a `Dockerfile` +
+`docker compose` bringing up `create_default_app` with auth on and a
+persistent, backed-up store. It is fully buildable offline today and
+everything else in the chapter sits on top of it.
