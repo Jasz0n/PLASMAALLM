@@ -46,6 +46,7 @@ from allm.api.security import (
     TokenVerifier,
     default_verifier,
 )
+from allm.api.chat import build_chat_router
 from allm.api.dashboard import build_dashboard_router
 from allm.api.teacher_visual import build_teacher_visual_router
 from allm.events import EventLog, WebhookDispatcher, WebhookRegistry, WebhookSender
@@ -170,6 +171,7 @@ def create_app(
 
     app.include_router(build_teacher_visual_router(store))
     app.include_router(build_dashboard_router(store))
+    app.include_router(build_chat_router())
 
     def to_package(submission: EvidenceSubmission) -> EvidencePackage:
         data = submission.model_dump()
@@ -222,6 +224,15 @@ def create_app(
             )
             for c in rows
         ]
+
+    @app.get("/ask")
+    def ask(q: str = Query(..., min_length=1, max_length=500)) -> dict:
+        """Grounded Q&A: an answer built only from the evidence graph, with
+        its confidence and provenance — or an honest 'no evidence yet'. It
+        never invents belief (M52)."""
+        from allm.ask import answer_question
+
+        return answer_question(q, graph, ledger, board, binder=binder).model_dump(mode="json")
 
     @app.get("/concepts/{name}")
     def get_concept(name: str) -> dict:

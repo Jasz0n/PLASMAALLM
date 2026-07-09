@@ -33,6 +33,11 @@ Now open **`localhost:8000/dashboard`** — a resolved contested claim
 KEL metrics, and a live feed. That is the exit-criterion loop, already
 run once.
 
+Or open **`localhost:8000/chat`** and ask *"how long does the nano
+coating take to form?"* — a grounded answer with its confidence and
+provenance, and an honest *"no evidence yet"* for anything the base can't
+back.
+
 ## 4. Talk to it
 
 Reads are open; writes need the token.

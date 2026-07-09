@@ -35,6 +35,7 @@ instance); this guide is the how-to on top of it.
 | See open experiments | `GET /proposals` | — |
 | Claim / resolve a proposal | `POST /proposals/{id}/claim` · `/resolve` | ✅ |
 | Follow what changed | `GET /events` · `/events/stream` | — |
+| Ask a grounded question | `GET /ask?q=…` | — |
 | Trace any write | `GET /audit` | — |
 | Register a webhook | `POST /webhooks` → `/approve` | ✅ |
 
@@ -104,6 +105,24 @@ subscribe to **SSE** `GET /events/stream`, or register a **webhook**
 `evidence.submitted`, `confidence.changed`, `proposal.opened`,
 `proposal.resolved`, `contribution.*`, `workshop.observed` — treat the set
 as open and ignore any you don't handle.
+
+## Ask ALLM — grounded answers
+
+`GET /ask?q=…` (open) returns an answer built **only** from the evidence
+graph — never a generative guess:
+
+```json
+{ "found": true, "status": "established", "concept": "The Nano Coating",
+  "answer": "The nano coating is a dark layer that forms after 12 hours… The evidence supports this — confidence 0.79 from 3 contributor(s), 2 independent replication(s).",
+  "confidence": 0.79, "contributors": 3, "independent_replications": 2,
+  "provenance": "…", "sources": ["pkg_…"], "open_questions": [], "suggestion": null }
+```
+
+`status` is one of `established` · `emerging` · `contested` · `unfounded`
+· `unknown`. When nothing matches, `found` is `false` and the answer says
+so — render that honestly (it's the product's whole point), and use
+`status` to colour the confidence. `AllmClient.ask("…")` wraps it; the
+reference chat UI is served at `/chat`.
 
 ## What the client never sees
 

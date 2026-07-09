@@ -759,6 +759,50 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/ask": {
+      "get": {
+        "description": "Grounded Q&A: an answer built only from the evidence graph, with\nits confidence and provenance \u2014 or an honest 'no evidence yet'. It\nnever invents belief (M52).",
+        "operationId": "ask_ask_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Ask Ask Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask"
+      }
+    },
     "/audit": {
       "get": {
         "description": "Who changed what, when, why \u2014 metadata only, values stay\nbehind their own endpoints.",
@@ -832,6 +876,27 @@
           }
         },
         "summary": "Audit Trail"
+      }
+    },
+    "/chat": {
+      "get": {
+        "operationId": "chat_ui_chat_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Chat Ui",
+        "tags": [
+          "chat"
+        ]
       }
     },
     "/concepts": {

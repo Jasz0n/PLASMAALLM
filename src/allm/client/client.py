@@ -147,6 +147,13 @@ class AllmClient:
 
         return self._call("GET", f"/concepts/{quote(name)}")
 
+    def ask(self, query: str) -> dict:
+        """Grounded Q&A: an answer from the evidence graph, with confidence
+        and provenance — or an honest 'no evidence yet'. Never a guess."""
+        from urllib.parse import quote
+
+        return self._call("GET", f"/ask?q={quote(query)}")
+
     # -- contributions (writes) -----------------------------------------
 
     def submit_evidence(

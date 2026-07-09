@@ -217,7 +217,11 @@ shared knowledge base measurably improves. Its central principle:
   on a number, KDP surfaces the conflict, a proposal opens, three
   independent replications shift confidence 0.41 → 0.79 — so a fresh
   deploy's dashboard is immediately alive, and CI rehearses the
-  exit-criterion path before real contributors arrive. Next: live
+  exit-criterion path before real contributors arrive. **Ask ALLM:** a
+  grounded chat (`GET /ask`, a `/chat` UI) that answers *only* from
+  submitted evidence — with confidence and provenance — and says "I don't
+  have evidence about that yet, I won't guess" rather than hallucinating;
+  a chatbot whose superpower is refusing to make things up. Next: live
   SocialServer wiring, and the pilot.
 
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,

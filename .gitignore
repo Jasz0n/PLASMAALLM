@@ -10,6 +10,7 @@ experiments/runs/
 
 # Local environment and editor state — never committed
 .env
+.env.*
 .claude/settings.local.json*
 
 # Runtime caches
