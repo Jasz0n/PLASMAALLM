@@ -252,7 +252,7 @@ speaks the platform's streaming layer.*
 | Frozen wire format | **done (2026-07-09).** `allm.wire` assembles a standalone, transport-independent contract from the real models: `wire_version` **1.0.0** semver'd *separately* from the engine version, request + response schemas + vocabularies, published to [`docs/wire-format.json`](docs/wire-format.json) with a human spec + compatibility promise in [`docs/wire-format.md`](docs/wire-format.md). `GET /wire` (open discovery) + `allm wire -o …`; a CI drift guard (`test_published_wire_contract_is_current`) proves published == implemented. Platform teams build against this, never our source |
 | Event stream | **done (2026-07-09).** *Pull:* `allm.events.EventLog` — ordered, append-only domain events over the same versioned store, polled by cursor (`GET /events?since=<seq>`, never miss or replay); emits `evidence.submitted` + `confidence.changed`, `proposal.opened`, `proposal.resolved`; the dashboard mirrors it. *Push:* `allm.events.webhooks` delivers the feed outbound — and because that crosses the network, it inherits the core invariant: a subscription is **proposed** on register and delivers **nothing** until a named human approves it (`POST /webhooks` → `/approve`). HMAC-SHA256-signed payloads, every attempt recorded (`GET /webhooks/deliveries`), a failing endpoint never breaks the core write, injectable transport for offline tests (`tests/test_webhooks.py`). The apprentice **contribution lifecycle** also streams — `ContributionBoard(store, events=…)` emits `contribution.proposed/approved/rejected/applied`, putting the human-approval ledger on the live feed (`tests/test_contribution_events.py`). **Open:** queue-based delivery with retries (v0 is best-effort, synchronous). |
 | Incentives stay outside | identity/reward mechanics live entirely in the platform; the core sees opaque contributor ids; replication-aware confidence remains the anti-gaming primitive (popularity cannot move belief) |
-| Live workshop loop | LiveKit observation → synced evidence → KDP, on real platform streams instead of fixtures |
+| Live workshop loop | **orchestrator done (2026-07-09).** `allm.researcher.WorkshopLoop` folds live observation into the graph tick by tick — each `SyncedEvidence` batch → text → KDP distill → `GraphInjector`, conflicts opened as proposals, every tick announced as a `workshop.observed` event (live workshops now feed the same machinery as documents/practice, visible on the dashboard + webhooks). Decoupled from LiveKit creds via a `source` callable; `observer_source()` binds a real `LiveKitObserver`, a canned list drives it offline (`examples/80`, `tests/test_workshop_loop.py`). **Open:** a sustained run against a real SocialServer LiveKit stream (needs a live daemon; the fixture/RTC observer path already exists from M16–M17) |
 | Pilot community | one narrow domain, real contributors, measured by conflict-resolution efficiency, proposal throughput and **EGR** (evidence growth rate — already implemented and tracked, KEL.md 3.7) |
 
 **Kickoff sequencing.** (1) *Event stream v0* — **done**, the push side
@@ -260,8 +260,11 @@ of the live feed pairing with the M50 dashboard's read side. (2) *Frozen
 wire format* — **done**, the standalone versioned contract so platform
 teams build without reading our source. (3) *Webhook dispatch* — **done**,
 outbound delivery of the event stream, opt-in and approval-gated (it is
-an outward-facing action). (4) *Live workshop loop* on real LiveKit
-streams. (5) *Pilot* against the exit criterion.
+an outward-facing action). (4) *Live workshop loop* — **orchestrator
+done**; the remaining step is a sustained run against a real LiveKit
+stream (needs a live daemon). (5) *Pilot* against the exit criterion —
+the one milestone that genuinely needs real contributors and a running
+platform, so it closes M51.
 
 **Exit criterion** — unchanged, it was right the first time: one real
 contested claim goes through the full public loop — discussion → KDP →

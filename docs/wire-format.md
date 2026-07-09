@@ -57,7 +57,10 @@ reject on.
 - **`Event`** — one entry of the live feed (`GET /events?since=<seq>`).
   Each carries a monotonic `seq`; poll with the last `seq` you saw and
   you will never miss or replay one. Types today: `evidence.submitted`,
-  `confidence.changed`, `proposal.opened`, `proposal.resolved`.
+  `confidence.changed`, `proposal.opened`, `proposal.resolved`,
+  `contribution.proposed` / `approved` / `rejected` / `applied`, and
+  `workshop.observed`. Treat the type set as open (new ones are a minor
+  bump) and ignore any you don't handle.
 
 ## Receiving webhooks
 

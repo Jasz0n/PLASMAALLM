@@ -188,8 +188,13 @@ shared knowledge base measurably improves. Its central principle:
   be *pushed* to platform endpoints — and because that crosses the network,
   it inherits the core invariant: a subscription delivers **nothing** until
   a named human approves it (`POST /webhooks` → `/approve`), payloads are
-  HMAC-signed, and every attempt is recorded. Next: the live LiveKit
-  workshop loop and a pilot community.
+  HMAC-signed, and every attempt is recorded. **Live workshop loop:**
+  `WorkshopLoop` folds LiveKit observation into the graph tick by tick —
+  each synced-evidence batch → KDP → concepts, conflicts opened as
+  proposals, every tick a `workshop.observed` event — so live workshops
+  feed the same evidence machinery as documents and practice
+  (`examples/80`). Next: a sustained run against a real stream, and a
+  pilot community.
 
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,
   decay prediction + maintenance optimizer, multi-objective KEL, multi-dimensional

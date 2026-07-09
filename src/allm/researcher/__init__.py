@@ -24,6 +24,10 @@ __all__ = [
     "package_from_samples_jsonl",
     "RepositoryProvider",
     "inject_package_concepts",
+    "WorkshopLoop",
+    "WorkshopReport",
+    "WorkshopTick",
+    "observer_source",
 ]
 
 
@@ -66,4 +70,8 @@ def __getattr__(name: str):
         from allm.researcher.graph_injection import inject_package_concepts
 
         return inject_package_concepts
+    if name in {"WorkshopLoop", "WorkshopReport", "WorkshopTick", "observer_source"}:
+        from allm.researcher import workshop_loop
+
+        return getattr(workshop_loop, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
