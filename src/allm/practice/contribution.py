@@ -12,7 +12,7 @@ records who allowed it, versioned like every other belief.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 from pathlib import Path
@@ -21,6 +21,9 @@ from allm.core.logging import get_logger
 from allm.practice.repo_tasks import CandidatePatch
 from allm.practice.types import PracticeRun
 from allm.storage.base import RecordStore
+
+if TYPE_CHECKING:  # optional: the board works with or without a live feed
+    from allm.events import EventLog
 
 logger = get_logger("practice.contribution")
 
@@ -52,10 +55,16 @@ class Contribution(BaseModel):
 
 
 class ContributionBoard:
-    """Versioned lifecycle: proposed → approved/rejected → applied."""
+    """Versioned lifecycle: proposed → approved/rejected → applied.
 
-    def __init__(self, store: RecordStore) -> None:
+    An optional ``events`` log turns each transition into a domain event
+    (M51): the human-approval ledger is exactly what the platform's live
+    feed should carry. The board works identically without one.
+    """
+
+    def __init__(self, store: RecordStore, *, events: "EventLog | None" = None) -> None:
         self._store = store
+        self._events = events
 
     def propose(
         self, patch: CandidatePatch, *, test_selector: str, trial: PracticeRun
@@ -69,6 +78,7 @@ class ContributionBoard:
             trial_outcome=trial.outcome,
         )
         self._put(contribution, f"proposed by {patch.author}: trial {trial.outcome[:40]!r}")
+        self._emit(contribution, "proposed")
         return contribution
 
     def get(self, contribution_id: str) -> Contribution | None:
@@ -112,6 +122,7 @@ class ContributionBoard:
             applied,
             f"applied to {target} under approval by {contribution.reviewer}",
         )
+        self._emit(applied, "applied")
         logger.info("applied %s to %s (approved by %s)", contribution_id, target, contribution.reviewer)
         return target
 
@@ -138,6 +149,7 @@ class ContributionBoard:
             }
         )
         self._put(reviewed, f"{status} by {reviewer}: {reason[:60]}")
+        self._emit(reviewed, status)
         return reviewed
 
     def _put(self, contribution: Contribution, reason: str) -> None:
@@ -146,4 +158,19 @@ class ContributionBoard:
             contribution.id,
             contribution.model_dump(mode="json"),
             reason=reason,
+        )
+
+    def _emit(self, contribution: Contribution, status: ContributionStatus) -> None:
+        """Announce a lifecycle transition to the live feed, if wired."""
+        if self._events is None:
+            return
+        self._events.emit(
+            f"contribution.{status}",
+            contribution.id,
+            {
+                "file": contribution.patch.file,
+                "author": contribution.patch.author,
+                "reviewer": contribution.reviewer,
+                "trial_outcome": contribution.trial_outcome[:80],
+            },
         )
