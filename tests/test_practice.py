@@ -93,6 +93,30 @@ def test_crash_and_timeout_are_outcomes(executor: SandboxExecutor) -> None:
     assert run.status == "timeout" and run.outcome == "timeout"
 
 
+def test_executed_code_cannot_read_parent_secrets(
+    executor: SandboxExecutor, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The parent's tokens must not leak into the sandbox (M50 security)."""
+    monkeypatch.setenv("ALLM_API_TOKEN", "super-secret-token-123")
+    monkeypatch.setenv("OLLAMA_API_KEY", "sk-leak-me")
+    probe = PracticeProcedure(
+        id="env_probe",
+        description="Reports whether it can see the parent's secrets.",
+        program=(
+            "import os\n"
+            "print(os.environ.get('ALLM_API_TOKEN'),"
+            " os.environ.get('OLLAMA_API_KEY'),"
+            " bool(os.environ.get('PATH')))\n"
+        ),
+        variables=(),
+        topic="security",
+    )
+    run = executor.run(probe)
+    assert run.status == "ok"
+    # secrets gone, but PATH survives so the program can run at all
+    assert run.outcome == "None None True"
+
+
 def test_variables_bind_as_literals_never_code() -> None:
     assert bind_variables({"x": 2, "s": "a'b"}) == "s = \"a'b\"\nx = 2"
     with pytest.raises(ValueError, match="not a plain literal"):

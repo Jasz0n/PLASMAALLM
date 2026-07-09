@@ -10,6 +10,7 @@ remains the M50 exit bar — rlimits are the floor, not the ceiling.
 
 from __future__ import annotations
 
+import os
 from typing import Callable
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -22,6 +23,23 @@ try:  # POSIX only
     import resource as _resource
 except ImportError:  # pragma: no cover - windows
     _resource = None
+
+# Variables an ordinary program needs to run at all — everything else
+# (tokens, API keys) stays with the parent.
+_ENV_ALLOWLIST = ("PATH", "LANG", "LC_ALL", "TZ", "HOME", "TMPDIR")
+
+
+def clean_env() -> dict[str, str]:
+    """A minimal environment for executed code — no inherited secrets.
+
+    The parent process holds tokens (``ALLM_API_TOKEN``,
+    ``OLLAMA_API_KEY``, ...). ``python -I`` isolates imports but not the
+    environment, and bubblewrap passes it through, so untrusted code
+    would otherwise read every secret we hold. Pass only what a program
+    needs to run at all — anything a submission genuinely requires must
+    be supplied deliberately, not inherited by accident.
+    """
+    return {k: os.environ[k] for k in _ENV_ALLOWLIST if k in os.environ}
 
 
 class ResourceLimits(BaseModel):

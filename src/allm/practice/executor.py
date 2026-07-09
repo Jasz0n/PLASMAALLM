@@ -23,6 +23,7 @@ from typing import Any
 
 from allm.core.logging import get_logger
 from allm.practice.isolation import IsolationMode, resolve_isolation, wrap_command
+from allm.practice.limits import clean_env
 from allm.practice.types import PracticeProcedure, PracticeRun
 
 logger = get_logger("practice.executor")
@@ -100,6 +101,7 @@ class SandboxExecutor:
                 timeout=procedure.timeout_seconds,
                 cwd=procedure.workdir,
                 preexec_fn=procedure.limits.preexec(),
+                env=clean_env(),
             )
             duration = time.perf_counter() - started
             status = "ok" if completed.returncode == 0 else "crash"

@@ -39,10 +39,11 @@ class CodingGrader:
     def __init__(
         self, timeout_seconds: float = 5.0, limits: "ResourceLimits | None" = None
     ) -> None:
-        from allm.practice.limits import ResourceLimits
+        from allm.practice.limits import ResourceLimits, clean_env
 
         self._timeout = timeout_seconds
         self._limits = limits or ResourceLimits()
+        self._env = clean_env()
 
     def grade(self, question: Question, answer: Answer) -> QuestionResult:
         if question.expected is None:
@@ -55,6 +56,7 @@ class CodingGrader:
                 text=True,
                 timeout=self._timeout,
                 preexec_fn=self._limits.preexec(),
+                env=self._env,
             )
         except subprocess.TimeoutExpired:
             return self._result(
