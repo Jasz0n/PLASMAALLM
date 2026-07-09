@@ -55,8 +55,11 @@ from allm.kdp import DocumentStore, GraphInjector, KDPipeline
 from allm.kel import KnowledgeEvaluationLayer
 from allm.knowledge import KnowledgeGraph
 from allm.proposals import ProposalBoard, ProposalError
+from allm.core.logging import get_logger
 from allm.storage import SQLiteRecordStore
 from allm.teacher import KnowledgeState
+
+logger = get_logger("api")
 
 
 # SSE tail poll interval — the store is poll-based, so a live stream checks
@@ -100,6 +103,30 @@ def create_app(
     dispatcher = WebhookDispatcher(webhooks, store, sender=webhook_sender)
     events = EventLog(store, on_emit=dispatcher.dispatch)
     kel = KnowledgeEvaluationLayer(graph, store, KnowledgeState(store), ledger=ledger)
+
+    # Grounded-RAG chat: a local model composes /ask answers from retrieved
+    # evidence when ALLM_ASK_MODEL is set (loaded once, reachability permitting).
+    ask_model_state: dict = {"loaded": False, "model": None}
+
+    def _ask_model():
+        if not ask_model_state["loaded"]:
+            ask_model_state["loaded"] = True
+            model_id = os.environ.get("ALLM_ASK_MODEL", "").strip()
+            if model_id:
+                try:
+                    from allm.models import ModelSpec, load_model
+
+                    spec = ModelSpec(
+                        name="ask",
+                        provider=os.environ.get("ALLM_ASK_MODEL_PROVIDER", "ollama"),
+                        model_id=model_id,
+                        base_url=os.environ.get("OLLAMA_BASE_URL") or None,
+                    )
+                    ask_model_state["model"] = load_model(spec)
+                    logger.info("Ask ALLM using grounded model %s", model_id)
+                except Exception as exc:  # keep the API up; fall back to extractive
+                    logger.warning("ask model %r unavailable, staying extractive: %s", model_id, exc)
+        return ask_model_state["model"]
 
     auth = verifier or default_verifier()
     limiter = rate_limiter or RateLimiter.from_env(os.environ.get("ALLM_API_RATE_LIMIT"))
@@ -229,9 +256,22 @@ def create_app(
     def ask(q: str = Query(..., min_length=1, max_length=500)) -> dict:
         """Grounded Q&A: an answer built only from the evidence graph, with
         its confidence and provenance — or an honest 'no evidence yet'. It
-        never invents belief (M52)."""
-        from allm.ask import answer_question
+        never invents belief (M52).
 
+        With ``ALLM_ASK_MODEL`` set, a local model *understands* the question
+        and composes the answer from the retrieved evidence (grounded RAG);
+        otherwise it falls back to deterministic extraction. Either way the
+        facts and provenance come from the graph, not the model."""
+        from allm.ask import answer_question, answer_with_model
+
+        model = _ask_model()
+        if model is not None:
+            try:
+                return answer_with_model(
+                    q, graph, ledger, board, model, binder=binder
+                ).model_dump(mode="json")
+            except Exception as exc:  # model down/slow → never fail the request
+                logger.warning("ask model failed, using extractive fallback: %s", exc)
         return answer_question(q, graph, ledger, board, binder=binder).model_dump(mode="json")
 
     @app.get("/concepts/{name}")

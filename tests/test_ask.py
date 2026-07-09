@@ -74,6 +74,46 @@ def test_unknown_question_refuses_to_guess(seeded) -> None:
     assert a.suggestion
 
 
+class _FakeModel:
+    """Records the prompt and returns a canned answer — no Ollama needed."""
+
+    def __init__(self) -> None:
+        self.prompt: str | None = None
+
+    def generate(self, prompt, params=None) -> str:
+        self.prompt = prompt
+        return "A grounded answer composed from the evidence."
+
+
+def test_grounded_model_answers_from_retrieved_evidence(seeded) -> None:
+    from allm.ask import answer_with_model
+
+    graph, ledger, board, binder = seeded
+    model = _FakeModel()
+    a = answer_with_model(
+        "what nano coating methods exist?", graph, ledger, board, model, binder=binder
+    )
+    assert a.engine == "model"
+    assert a.answer == "A grounded answer composed from the evidence."
+    assert a.concept == "The Nano Coating" and a.confidence >= 0.75  # facts still computed here
+    # the model was *grounded*: its prompt carried the evidence and the question
+    assert "EVIDENCE" in model.prompt and "caustic" in model.prompt.lower()
+    assert "what nano coating methods exist?" in model.prompt
+    assert "only the evidence" in model.prompt.lower()  # the anti-hallucination instruction
+
+
+def test_grounded_model_refuses_unknown_without_calling_the_model(seeded) -> None:
+    from allm.ask import answer_with_model
+
+    graph, ledger, board, binder = seeded
+    model = _FakeModel()
+    a = answer_with_model(
+        "how do I build a fusion reactor?", graph, ledger, board, model, binder=binder
+    )
+    assert a.status == "unknown" and not a.found
+    assert model.prompt is None  # no matching evidence -> no model call, just an honest no
+
+
 def test_ask_endpoint_and_chat_page(tmp_path: Path) -> None:
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient

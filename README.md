@@ -221,8 +221,11 @@ shared knowledge base measurably improves. Its central principle:
   grounded chat (`GET /ask`, a `/chat` UI) that answers *only* from
   submitted evidence — with confidence and provenance — and says "I don't
   have evidence about that yet, I won't guess" rather than hallucinating;
-  a chatbot whose superpower is refusing to make things up. Next: live
-  SocialServer wiring, and the pilot.
+  a chatbot whose superpower is refusing to make things up. With
+  `ALLM_ASK_MODEL` set, a local model *understands* the question and
+  composes the answer **only from the retrieved evidence** (grounded RAG)
+  — facts and provenance still computed from the graph, not the model.
+  Next: live SocialServer wiring, and the pilot.
 
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,
   decay prediction + maintenance optimizer, multi-objective KEL, multi-dimensional

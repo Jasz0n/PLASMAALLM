@@ -60,6 +60,8 @@ existing store needs `--force`.
 | `ALLM_API_CORS_ORIGINS` | *(none)* | Comma-separated browser origins allowed cross-site (e.g. `https://app.example`). Empty = same-origin only. `*` = any (dev). |
 | `ALLM_PORT` | `8000` | Host port to publish. |
 | `ALLM_ROOT_PATH` | *(none)* | External prefix when a proxy serves ALLM under a subpath (e.g. `/allm`) — makes the interactive `/docs` and OpenAPI URLs correct. |
+| `ALLM_ASK_MODEL` | *(none)* | Local model for grounded `/ask` (e.g. `qwen2.5:7b-instruct`). Empty = deterministic extraction. |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Where the model daemon lives (in a container, `http://host.docker.internal:11434`). |
 | `ALLM_LOG_LEVEL` | `INFO` | Log level. |
 
 ### Behind a reverse proxy at a subpath
@@ -72,6 +74,25 @@ interactive `/allm/docs` and OpenAPI URLs resolve correctly:
 ```bash
 export ALLM_ROOT_PATH=/allm
 ```
+
+### Grounded chat with a local model (optional)
+
+By default `/ask` and `/chat` answer by **extraction** — deterministic,
+offline, but literal. To make the chat actually *understand* questions
+(distinguish "how do I make X" from "what X methods exist"), point it at a
+local model; it composes the answer **only from the retrieved evidence**
+(RAG) and still refuses to guess:
+
+```bash
+export ALLM_ASK_MODEL=qwen2.5:7b-instruct
+export OLLAMA_BASE_URL=http://host.docker.internal:11434   # Ollama on the host
+docker compose up -d
+```
+
+The container reaches a host Ollama via `host.docker.internal` (wired in
+compose). If the model is unset or unreachable, `/ask` silently falls
+back to extraction — the API never fails. The facts, confidence and
+provenance are always computed from the graph, never by the model.
 
 ### A browser client
 

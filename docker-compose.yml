@@ -22,6 +22,13 @@ services:
       ALLM_API_CORS_ORIGINS: ${ALLM_API_CORS_ORIGINS:-}
       # Set to the external prefix (e.g. /allm) when a proxy serves ALLM under a subpath.
       ALLM_ROOT_PATH: ${ALLM_ROOT_PATH:-}
+      # Optional grounded chat: a local model composes /ask answers from retrieved
+      # evidence (RAG). Needs Ollama reachable — see below. Empty = extractive.
+      ALLM_ASK_MODEL: ${ALLM_ASK_MODEL:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+    # Lets OLLAMA_BASE_URL=http://host.docker.internal:11434 reach an Ollama on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - allm-data:/data
     restart: unless-stopped

@@ -127,6 +127,11 @@ not the definition.
   submitted — it won't invent them) · `unknown` (nothing matched).
 - `steps`: the reproducible procedure, present for answered how-to
   questions — render it as an ordered list.
+- `engine`: `extractive` (deterministic) or `model` (a local model
+  composed the answer from the retrieved evidence — grounded RAG, enabled
+  by `ALLM_ASK_MODEL`). Either way `confidence`, `sources` and
+  `provenance` are computed from the graph, not the model — so a client
+  can always show the receipts under a model-written answer.
 
 When nothing matches, `found` is `false` and the answer says so — render
 that honestly (it's the product's whole point), and use `status` to
