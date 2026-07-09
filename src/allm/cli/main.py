@@ -190,6 +190,29 @@ def _cmd_db_verify(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def _cmd_seed(args: argparse.Namespace) -> int:
+    """Populate a store by running the public-loop scenario (M52)."""
+    from allm.seed import seed_public_loop
+    from allm.storage import SQLiteRecordStore
+
+    store = SQLiteRecordStore(args.db)
+    try:
+        if store.namespaces() and not args.force:
+            print(f"{args.db} already has data — pass --force to seed anyway")
+            return 1
+        report = seed_public_loop(store)
+    finally:
+        store.close()
+    print(f"seeded {args.db}:")
+    print(f"  concepts: {', '.join(report.concepts)}")
+    print(
+        f"  contested {report.contested_concept!r} -> {report.proposal_outcome} "
+        f"(confidence {report.confidence_before:.2f} -> {report.confidence_after:.2f})"
+    )
+    print(f"  {report.events} events on the live feed")
+    return 0
+
+
 def _cmd_wire(args: argparse.Namespace) -> int:
     """Print or export the frozen wire contract (M51)."""
     import json
@@ -310,6 +333,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="replace an existing target (old file kept as .replaced)",
     )
     p_restore.set_defaults(func=_cmd_db_restore)
+    p_seed = sub.add_parser("seed", help="populate a store with the public-loop scenario (M52)")
+    p_seed.add_argument("--db", required=True, help="path to the SQLite store to seed")
+    p_seed.add_argument("--force", action="store_true", help="seed even if the store has data")
+    p_seed.set_defaults(func=_cmd_seed)
+
     p_wire = sub.add_parser("wire", help="print/export the frozen wire contract (M51)")
     p_wire.add_argument("--output", "-o", help="write the contract JSON (default: stdout)")
     p_wire.set_defaults(func=_cmd_wire)

@@ -36,6 +36,20 @@ curl -s -X POST localhost:8000/evidence \
 `/ready` is **readiness** (the store answers, safe to route traffic).
 Compose gates the container's health on `/ready`.
 
+### Optional: seed a demo
+
+A fresh store is empty. To make the dashboard immediately alive — and to
+watch the whole public loop run once (discussion → conflict → proposal →
+replication → confidence shift) — seed it:
+
+```bash
+docker compose exec api allm seed --db /data/allm.sqlite3
+```
+
+Then open `/dashboard`: concepts, a resolved contested claim, evidence
+with replications, KEL metrics and a populated live feed. Re-seeding an
+existing store needs `--force`.
+
 ## Configuration (all via `ALLM_` env)
 
 | Variable | Default | Meaning |

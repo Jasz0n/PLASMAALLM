@@ -211,8 +211,13 @@ shared knowledge base measurably improves. Its central principle:
   a ["build a client" guide](docs/client-guide.md) (Python + a browser
   `EventSource` sketch), and a runnable
   [end-to-end example](examples/81_client_end_to_end.py) — a frontend dev
-  is productive without reading engine source. Next: a seeded demo
-  scenario, live SocialServer wiring, and the pilot.
+  is productive without reading engine source. **Seed & demo:**
+  `allm seed` runs the whole public loop for real — two workshops disagree
+  on a number, KDP surfaces the conflict, a proposal opens, three
+  independent replications shift confidence 0.41 → 0.79 — so a fresh
+  deploy's dashboard is immediately alive, and CI rehearses the
+  exit-criterion path before real contributors arrive. Next: live
+  SocialServer wiring, and the pilot.
 
 - **M41–M46 (lifelong learning stack) — done.** KS planner + retrieval strength,
   decay prediction + maintenance optimizer, multi-objective KEL, multi-dimensional
